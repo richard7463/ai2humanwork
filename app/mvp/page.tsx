@@ -610,7 +610,7 @@ export default function MVPPage() {
                   </div>
                   <div className="task-footer">
                     <div className={`avatar badge-${task.avatarSeed}`} />
-                    <span>待接单</span>
+                    <span>{statusLabels[task.status]}</span>
                   </div>
                 </article>
               );
