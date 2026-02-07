@@ -1217,6 +1217,21 @@ button {
   font-size: 13px;
 }
 
+.mvp-evidence-item .evidence-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 10px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+
+.mvp-evidence-item .evidence-meta span {
+  color: var(--muted);
+  letter-spacing: 0.12em;
+}
+
 .mvp-evidence-item span {
   text-transform: uppercase;
   letter-spacing: 0.2em;

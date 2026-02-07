@@ -129,6 +129,7 @@ export default function MVPPage() {
   });
   const [humanName, setHumanName] = useState<Record<string, string>>({});
   const [evidenceNote, setEvidenceNote] = useState<Record<string, string>>({});
+  const [aiNote, setAiNote] = useState<Record<string, string>>({});
   const [filters, setFilters] = useState({
     location: "all",
     type: "all",
@@ -201,11 +202,13 @@ export default function MVPPage() {
   };
 
   const runAi = async (id: string, outcome: "success" | "fail") => {
+    const note = aiNote[id]?.trim() || "Auto run";
     await fetch(`/api/tasks/${id}/ai`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ outcome, note: "Auto run" })
+      body: JSON.stringify({ outcome, note })
     });
+    setAiNote((prev) => ({ ...prev, [id]: "" }));
     await loadTasks();
   };
 
@@ -681,6 +684,19 @@ export default function MVPPage() {
 
               <details className="mvp-details">
                 <summary>手动操作</summary>
+                <div className="mvp-inline">
+                  <input
+                    className="mvp-input"
+                    placeholder="AI 日志 / 失败原因"
+                    value={aiNote[selectedTask.id] || ""}
+                    onChange={(event) =>
+                      setAiNote((prev) => ({
+                        ...prev,
+                        [selectedTask.id]: event.target.value
+                      }))
+                    }
+                  />
+                </div>
                 <div className="mvp-actions">
                   <button
                     className="btn btn-outline"
@@ -744,7 +760,11 @@ export default function MVPPage() {
                 )}
                 {selectedTask.evidence.map((item) => (
                   <div key={item.id} className="mvp-evidence-item">
-                    <span>{item.by}</span>
+                    <div className="evidence-meta">
+                      <span>{item.by}</span>
+                      <span>{item.type}</span>
+                      <span>{new Date(item.createdAt).toLocaleString()}</span>
+                    </div>
                     <p>{item.content}</p>
                   </div>
                 ))}
