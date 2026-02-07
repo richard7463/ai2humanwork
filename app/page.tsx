@@ -608,9 +608,14 @@ export default function HomePage() {
               <h2 className={styles.sectionTitle}>{t.section.loopTitle}</h2>
               <p className={styles.sectionDesc}>{t.section.loopDesc}</p>
             </div>
-            <Link className={`${styles.button} ${styles.buttonGhost}`} href="/mvp">
-              {lang === "zh" ? "打开 MVP" : "Open MVP"}
-            </Link>
+            <div className={styles.loopActions}>
+              <Link className={`${styles.button} ${styles.buttonGhost}`} href="/mvp">
+                {lang === "zh" ? "打开 MVP" : "Open MVP"}
+              </Link>
+              <Link className={`${styles.button} ${styles.buttonPrimary}`} href="/mvp?demo=1">
+                {lang === "zh" ? "一键体验闭环" : "One-click demo"}
+              </Link>
+            </div>
           </div>
 
           <div className={styles.loopGrid}>

@@ -7,12 +7,8 @@ export async function POST(
   request: Request,
   { params }: { params: { id: string } }
 ) {
-  const body = await request.json();
-  const note = String(body.note || "Evidence submitted").trim();
-  const url = String(body.url || "").trim();
-  const by = body.by === "human" ? "human" : "system";
-  const type = body.type === "photo" ? "photo" : "note";
-
+  const body = await request.json().catch(() => ({}));
+  const reason = String(body.reason || "Rejected by reviewer").trim();
   let updated: unknown = null;
 
   await updateDb((db) => {
@@ -21,17 +17,15 @@ export async function POST(
       return;
     }
 
+    task.status = "ai_failed";
+    task.updatedAt = new Date().toISOString();
     task.evidence.unshift({
       id: crypto.randomUUID(),
-      by,
-      type,
-      content: type === "photo" ? url || "Photo evidence" : note || "Evidence submitted",
+      by: "system",
+      type: "note",
+      content: `Rejected: ${reason || "Rejected by reviewer"}`,
       createdAt: new Date().toISOString()
     });
-    if (task.status !== "verified" && task.status !== "paid") {
-      task.status = "human_done";
-    }
-    task.updatedAt = new Date().toISOString();
     updated = task;
   });
 
@@ -41,3 +35,4 @@ export async function POST(
 
   return NextResponse.json(updated);
 }
+

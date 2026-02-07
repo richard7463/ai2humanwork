@@ -117,6 +117,7 @@ export default function MVPPage() {
   const [seeding, setSeeding] = useState(false);
   const [demoRunningId, setDemoRunningId] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [autoDemoDone, setAutoDemoDone] = useState(false);
   const [marketTab, setMarketTab] = useState<"ai" | "human">("ai");
   const [density, setDensity] = useState<"comfortable" | "compact">(
     "comfortable"
@@ -130,6 +131,11 @@ export default function MVPPage() {
   const [humanName, setHumanName] = useState<Record<string, string>>({});
   const [evidenceNote, setEvidenceNote] = useState<Record<string, string>>({});
   const [aiNote, setAiNote] = useState<Record<string, string>>({});
+  const [evidenceType, setEvidenceType] = useState<
+    Record<string, "note" | "photo">
+  >({});
+  const [evidenceUrl, setEvidenceUrl] = useState<Record<string, string>>({});
+  const [rejectReason, setRejectReason] = useState<Record<string, string>>({});
   const [filters, setFilters] = useState({
     location: "all",
     type: "all",
@@ -174,6 +180,22 @@ export default function MVPPage() {
   }, []);
 
   useEffect(() => {
+    if (autoDemoDone) return;
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("demo") !== "1") return;
+    const run = async () => {
+      const created = await createTask(demoTemplate);
+      if (created) {
+        setSelectedId(created.id);
+        await runFullDemo(created);
+      }
+      setAutoDemoDone(true);
+    };
+    run();
+  }, [autoDemoDone]);
+
+  useEffect(() => {
     if (!tasks.length) {
       setSelectedId(null);
       return;
@@ -185,20 +207,26 @@ export default function MVPPage() {
 
   const selectedTask = tasks.find((task) => task.id === selectedId) || null;
 
-  const submitTask = async (payload?: typeof form) => {
+  const createTask = async (payload?: typeof form) => {
     const data = payload ?? form;
     if (!data.title.trim()) {
-      return;
+      return null;
     }
     setLoading(true);
-    await fetch("/api/tasks", {
+    const res = await fetch("/api/tasks", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data)
     });
+    const created = (await res.json()) as Task;
     setForm({ title: "", budget: "", deadline: "", acceptance: "" });
     await loadTasks();
     setLoading(false);
+    return created;
+  };
+
+  const submitTask = async (payload?: typeof form) => {
+    await createTask(payload);
   };
 
   const runAi = async (id: string, outcome: "success" | "fail") => {
@@ -212,30 +240,45 @@ export default function MVPPage() {
     await loadTasks();
   };
 
-  const assignHuman = async (id: string) => {
+  const assignHuman = async (id: string, name?: string) => {
     await fetch(`/api/tasks/${id}/human`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: humanName[id] || "Demo Human" })
+      body: JSON.stringify({ name: name || humanName[id] || "Demo Human" })
     });
     await loadTasks();
   };
 
   const submitEvidence = async (id: string) => {
+    const type = evidenceType[id] || "note";
     await fetch(`/api/tasks/${id}/evidence`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         by: "human",
-        note: evidenceNote[id] || "照片与时间戳已上传"
+        type,
+        note: evidenceNote[id] || "照片与时间戳已上传",
+        url: evidenceUrl[id] || ""
       })
     });
     setEvidenceNote((prev) => ({ ...prev, [id]: "" }));
+    setEvidenceUrl((prev) => ({ ...prev, [id]: "" }));
     await loadTasks();
   };
 
   const verifyTask = async (id: string) => {
     await fetch(`/api/tasks/${id}/verify`, { method: "POST" });
+    await loadTasks();
+  };
+
+  const rejectTask = async (id: string) => {
+    const reason = rejectReason[id] || "Rejected by reviewer";
+    await fetch(`/api/tasks/${id}/reject`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ reason })
+    });
+    setRejectReason((prev) => ({ ...prev, [id]: "" }));
     await loadTasks();
   };
 
@@ -345,6 +388,54 @@ export default function MVPPage() {
     }
     return result;
   }, [enrichedTasks, filters, marketTab]);
+
+  const humanPool = useMemo(
+    () => [
+      {
+        name: "Alex Chen",
+        location: "Austin",
+        rate: "$55/hr",
+        tags: ["verification", "pickup", "photo"],
+        available: true
+      },
+      {
+        name: "Maya Li",
+        location: "Shanghai",
+        rate: "$42/hr",
+        tags: ["onsite", "timestamp", "delivery"],
+        available: true
+      },
+      {
+        name: "Ryo Tanaka",
+        location: "Tokyo",
+        rate: "$68/hr",
+        tags: ["research", "interview", "report"],
+        available: false
+      },
+      {
+        name: "Samira K",
+        location: "Dubai",
+        rate: "$75/hr",
+        tags: ["signing", "verification", "rush"],
+        available: true
+      },
+      {
+        name: "Ben Hart",
+        location: "Berlin",
+        rate: "$48/hr",
+        tags: ["pickup", "errands", "proof"],
+        available: true
+      },
+      {
+        name: "Nina Zhou",
+        location: "Singapore",
+        rate: "$62/hr",
+        tags: ["photo", "retail", "audit"],
+        available: true
+      }
+    ],
+    []
+  );
 
   const scrollToPost = () => {
     document.getElementById("post-task")?.scrollIntoView({ behavior: "smooth" });
@@ -697,6 +788,19 @@ export default function MVPPage() {
                     }
                   />
                 </div>
+                <div className="mvp-inline">
+                  <input
+                    className="mvp-input"
+                    placeholder="AI 日志 / 失败原因"
+                    value={aiNote[selectedTask.id] || ""}
+                    onChange={(event) =>
+                      setAiNote((prev) => ({
+                        ...prev,
+                        [selectedTask.id]: event.target.value
+                      }))
+                    }
+                  />
+                </div>
                 <div className="mvp-actions">
                   <button
                     className="btn btn-outline"
@@ -739,6 +843,32 @@ export default function MVPPage() {
                       }))
                     }
                   />
+                  <select
+                    className="mvp-input"
+                    value={evidenceType[selectedTask.id] || "note"}
+                    onChange={(event) =>
+                      setEvidenceType((prev) => ({
+                        ...prev,
+                        [selectedTask.id]: event.target.value as "note" | "photo"
+                      }))
+                    }
+                  >
+                    <option value="note">文本证据</option>
+                    <option value="photo">图片链接</option>
+                  </select>
+                  {(evidenceType[selectedTask.id] || "note") === "photo" && (
+                    <input
+                      className="mvp-input"
+                      placeholder="图片 URL"
+                      value={evidenceUrl[selectedTask.id] || ""}
+                      onChange={(event) =>
+                        setEvidenceUrl((prev) => ({
+                          ...prev,
+                          [selectedTask.id]: event.target.value
+                        }))
+                      }
+                    />
+                  )}
                   <button className="btn btn-ghost" onClick={() => submitEvidence(selectedTask.id)}>
                     提交证据
                   </button>
@@ -747,9 +877,25 @@ export default function MVPPage() {
                   <button className="btn btn-ghost" onClick={() => verifyTask(selectedTask.id)}>
                     验证通过
                   </button>
+                  <button className="btn btn-outline" onClick={() => rejectTask(selectedTask.id)}>
+                    驳回
+                  </button>
                   <button className="btn btn-primary" onClick={() => settleTask(selectedTask.id)}>
                     结算完成
                   </button>
+                </div>
+                <div className="mvp-inline">
+                  <input
+                    className="mvp-input"
+                    placeholder="驳回原因（可选）"
+                    value={rejectReason[selectedTask.id] || ""}
+                    onChange={(event) =>
+                      setRejectReason((prev) => ({
+                        ...prev,
+                        [selectedTask.id]: event.target.value
+                      }))
+                    }
+                  />
                 </div>
               </details>
 
@@ -766,11 +912,56 @@ export default function MVPPage() {
                       <span>{new Date(item.createdAt).toLocaleString()}</span>
                     </div>
                     <p>{item.content}</p>
+                    {item.type === "photo" && item.content.startsWith("http") && (
+                      <img className="evidence-photo" src={item.content} alt="evidence" />
+                    )}
                   </div>
                 ))}
               </div>
             </div>
           )}
+        </div>
+      </section>
+
+      <section className="market-human">
+        <div className="market-card">
+          <div className="block-header">
+            <div>
+              <h2>人类待命池</h2>
+              <p className="mvp-muted">AI 卡住时，快速派单给人。</p>
+            </div>
+          </div>
+          <div className="human-grid">
+            {humanPool.map((human) => (
+              <div key={human.name} className="human-card">
+                <div className="human-head">
+                  <div>
+                    <h3>{human.name}</h3>
+                    <p>
+                      {human.location} · {human.rate}
+                    </p>
+                  </div>
+                  <span className={`status-pill ${human.available ? "status-ai_running" : "status-ai_failed"}`}>
+                    {human.available ? "可接单" : "忙碌"}
+                  </span>
+                </div>
+                <div className="task-tags">
+                  {human.tags.map((tag) => (
+                    <span key={tag} className="tag-pill">
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+                <button
+                  className="btn btn-outline"
+                  disabled={!selectedTask || !human.available}
+                  onClick={() => selectedTask && assignHuman(selectedTask.id, human.name)}
+                >
+                  {selectedTask ? "派单给此人" : "先选择任务"}
+                </button>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
     </div>
