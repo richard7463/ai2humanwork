@@ -559,6 +559,13 @@
   gap: 14px;
 }
 
+.liveActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 14px;
+}
+
 .stat {
   border-radius: 22px;
   border: 1px solid rgba(255, 255, 255, 0.12);

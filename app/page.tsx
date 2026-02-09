@@ -406,8 +406,6 @@ export default function HomePage() {
 
         <nav className={styles.navLinks}>
           <a href="#live">{t.nav.live}</a>
-          <a href="#loop">{t.nav.loop}</a>
-          <a href="#entrances">{t.nav.entrances}</a>
           <a href="/mvp">{t.nav.mvp}</a>
         </nav>
 
@@ -445,12 +443,6 @@ export default function HomePage() {
         <div className={`${styles.mobileMenu} ${menuOpen ? styles.mobileMenuOpen : ""}`}>
           <a href="#live" onClick={() => setMenuOpen(false)}>
             {t.nav.live}
-          </a>
-          <a href="#loop" onClick={() => setMenuOpen(false)}>
-            {t.nav.loop}
-          </a>
-          <a href="#entrances" onClick={() => setMenuOpen(false)}>
-            {t.nav.entrances}
           </a>
           <a href="/mvp" onClick={() => setMenuOpen(false)}>
             {t.nav.mvp}
@@ -599,6 +591,15 @@ export default function HomePage() {
               <p>{lang === "zh" ? "待命人类" : "Humans on-call"}</p>
               <strong>105,766</strong>
             </div>
+          </div>
+
+          <div className={styles.liveActions}>
+            <a className={styles.button} href="#loop">
+              {lang === "zh" ? "看闭环 →" : "See loop →"}
+            </a>
+            <a className={styles.button} href="#entrances">
+              {lang === "zh" ? "看入口 →" : "See entrances →"}
+            </a>
           </div>
         </section>
 
