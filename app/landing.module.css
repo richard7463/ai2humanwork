@@ -692,6 +692,66 @@
   padding: 42px 0;
 }
 
+.stackSection {
+  padding-top: 28px;
+}
+
+.stackGrid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  margin-top: 24px;
+}
+
+.stackCard {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 16px;
+  padding: 18px;
+  border-radius: 18px;
+  border: 1px solid var(--ln-border);
+  background: var(--ln-card);
+  box-shadow: var(--ln-shadow);
+  position: relative;
+  overflow: hidden;
+}
+
+.stackCard::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 20% 20%, rgba(128, 255, 234, 0.15), transparent 55%);
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+.stackIcon {
+  min-width: 72px;
+  height: 72px;
+  border-radius: 16px;
+  background: rgba(12, 14, 24, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  display: grid;
+  place-items: center;
+  font-size: 14px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ln-text);
+}
+
+.stackLabel {
+  margin: 0 0 6px;
+  font-size: 18px;
+  color: var(--ln-text);
+}
+
+.stackDesc {
+  margin: 0;
+  color: var(--ln-muted);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
 .sectionHead {
   display: flex;
   align-items: flex-end;

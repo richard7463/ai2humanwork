@@ -19,6 +19,26 @@ const copy = {
   },
   meta: ["Verifiable output", "Human fallback network", "Auditable settlement"],
   section: {
+    stackTitle: "Core Stack",
+    stackDesc:
+      "The execution market runs on verifiable identity, real-world execution, and instant settlement.",
+    stackItems: [
+      {
+        name: "erc-8004",
+        label: "Identity + reputation",
+        desc: "Portable, verifiable agent identity. Every task has a traceable executor."
+      },
+      {
+        name: "openclaw",
+        label: "Execution hands",
+        desc: "Real web actions: discover gigs, bid, operate flows, and deliver proof."
+      },
+      {
+        name: "x402",
+        label: "Instant settlement",
+        desc: "Proof unlocks payment. Automated settlement after verification."
+      }
+    ],
     liveTitle: "Live Market (Concept)",
     liveDesc:
       "We use task cards + human pool cards to make the loop obvious: tasks enter → AI executes → humans take over when needed.",
@@ -425,6 +445,29 @@ export default function HomePage() {
                 </div>
               </div>
             </div>
+          </div>
+        </section>
+
+        <section className={`${styles.section} ${styles.stackSection}`}>
+          <div className={styles.sectionHead}>
+            <div>
+              <h2 className={styles.sectionTitle}>{t.section.stackTitle}</h2>
+              <p className={styles.sectionDesc}>{t.section.stackDesc}</p>
+            </div>
+          </div>
+
+          <div className={styles.stackGrid}>
+            {t.section.stackItems.map((item) => (
+              <div key={item.name} className={styles.stackCard}>
+                <div className={styles.stackIcon} aria-hidden>
+                  <span>{item.name}</span>
+                </div>
+                <div>
+                  <h3 className={styles.stackLabel}>{item.label}</h3>
+                  <p className={styles.stackDesc}>{item.desc}</p>
+                </div>
+              </div>
+            ))}
           </div>
         </section>
 
