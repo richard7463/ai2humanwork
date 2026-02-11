@@ -11,7 +11,11 @@ const names = [
   'ai2human-handshake',
   'ai2human-handshake-dark',
   'ai2human-handshake-mech',
-  'ai2human-handshake-mech-dark'
+  'ai2human-handshake-mech-dark',
+  'ai2human-dual-arrow',
+  'ai2human-dual-arrow-dark',
+  'ai2human-market-badge',
+  'ai2human-market-badge-dark'
 ];
 const sizes = [256, 512, 1024];
 

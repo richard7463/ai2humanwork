@@ -1,0 +1,23 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="ringA" x1="120" y1="80" x2="420" y2="420" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#80FFEA"/>
+      <stop offset="1" stop-color="#7C5CFF"/>
+    </linearGradient>
+    <linearGradient id="ringB" x1="380" y1="80" x2="120" y2="420" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFC46B"/>
+      <stop offset="1" stop-color="#7C5CFF"/>
+    </linearGradient>
+  </defs>
+
+  <circle cx="256" cy="256" r="186" stroke="url(#ringA)" stroke-width="16"/>
+  <circle cx="256" cy="256" r="140" stroke="url(#ringB)" stroke-width="10"/>
+
+  <text x="256" y="110" font-size="22" fill="#80FFEA" font-family="Space Grotesk, Sora, Inter, sans-serif" text-anchor="middle" letter-spacing="3">HUMAN</text>
+  <text x="256" y="416" font-size="22" fill="#7C5CFF" font-family="Space Grotesk, Sora, Inter, sans-serif" text-anchor="middle" letter-spacing="3">AI</text>
+
+  <rect x="164" y="180" width="184" height="152" rx="20" fill="rgba(10,12,20,0.9)" stroke="rgba(255,255,255,0.12)"/>
+  <text x="256" y="240" font-size="24" fill="#F4F6FF" font-family="Space Grotesk, Sora, Inter, sans-serif" text-anchor="middle">MARKET</text>
+  <text x="256" y="276" font-size="14" fill="rgba(244,246,255,0.7)" font-family="Space Grotesk, Sora, Inter, sans-serif" text-anchor="middle">Two-way labor</text>
+  <text x="256" y="302" font-size="14" fill="rgba(244,246,255,0.7)" font-family="Space Grotesk, Sora, Inter, sans-serif" text-anchor="middle">AI ↔ Human</text>
+</svg>
