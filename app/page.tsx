@@ -347,7 +347,6 @@ export default function HomePage() {
               <div className={styles.widgetInner}>
                 <div className={styles.widgetTop}>
                   <span className={styles.widgetTitle}>LIVE MARKET</span>
-                  <span className={styles.pill}>hover to pause</span>
                 </div>
 
                 <div className={styles.marketCols}>
