@@ -52,21 +52,21 @@ export function makeSeedTasks(count: number): Task[] {
   const titles = [
     "Scrape Upwork gigs (Next.js) + daily report",
     "Monitor Amazon price + alert when drops",
-    "线下核验：门店库存 + 时间戳照片",
-    "竞品上新监控：抓取 + 去重 + 邮件摘要",
-    "Captcha-heavy signup flow: need human fallback",
-    "跨平台同步：Notion → Sheets → Slack",
-    "查找 50 个潜在客户邮箱 + 证据链接",
-    "物流跑腿：取件 + 当面交付（同城）",
-    "内容合规巡检：侵权链接 + 截图存证",
-    "对比 20 家供应商报价 + 结构化表格"
+    "On-site check: inventory + timestamped photos",
+    "Competitor launch monitor: scrape + dedupe + email summary",
+    "Captcha-heavy signup flow: needs human fallback",
+    "Cross-app sync: Notion → Sheets → Slack",
+    "Find 50 leads + evidence links",
+    "Local courier: pickup + handoff (same city)",
+    "Compliance scan: infringing links + screenshots",
+    "Compare 20 vendor quotes + structured table"
   ];
 
   const acceptances = [
     "Provide evidence/logs",
-    "截图 + 链接 + 关键字段表格",
-    "门店照片 + 时间戳 + 地址",
-    "CSV + 报告 + 可复现步骤"
+    "Screenshots + links + key fields table",
+    "Store photos + timestamp + address",
+    "CSV + report + reproducible steps"
   ];
 
   const budgets = ["$35", "$49", "$80", "$120", "$220", "$399", "$750", "$999"];

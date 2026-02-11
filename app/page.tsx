@@ -64,6 +64,8 @@ function repeat<T>(items: T[], times: number): T[] {
   return Array.from({ length: times }).flatMap(() => items);
 }
 
+const WAITLIST_OFFSET = 2333;
+
 export default function HomePage() {
   const [entrance, setEntrance] = useState<"hire" | "publish" | "human">("hire");
   const [waitlistEmail, setWaitlistEmail] = useState("");
@@ -73,6 +75,7 @@ export default function HomePage() {
   );
   const [waitlistError, setWaitlistError] = useState("");
   const [waitlistCount, setWaitlistCount] = useState<number | null>(null);
+  const [showWaitlistModal, setShowWaitlistModal] = useState(false);
 
   const t = copy;
 
@@ -265,6 +268,7 @@ export default function HomePage() {
                   setWaitlistJoined(true);
                   setWaitlistStatus("done");
                   setWaitlistCount(typeof data?.count === "number" ? data.count : null);
+                  setShowWaitlistModal(true);
                 })
                 .catch((err) => {
                   setWaitlistJoined(false);
@@ -299,7 +303,7 @@ export default function HomePage() {
             {waitlistStatus === "done" && (
               <span className={styles.waitlistNote}>
                 {"You're in"}
-                {typeof waitlistCount === "number" ? ` · #${waitlistCount}` : ""}
+                {typeof waitlistCount === "number" ? ` · #${WAITLIST_OFFSET + waitlistCount}` : ""}
               </span>
             )}
             {waitlistStatus === "error" && (
@@ -774,6 +778,31 @@ export default function HomePage() {
           </footer>
         </section>
       </main>
+
+      {showWaitlistModal && (
+        <div className={styles.waitlistModalBackdrop} role="dialog" aria-modal="true">
+          <div className={styles.waitlistModal}>
+            <div className={styles.waitlistModalGlow} aria-hidden />
+            <p className={styles.waitlistModalEyebrow}>Waitlist confirmed</p>
+            <h3>Welcome to ai2human</h3>
+            <p>
+              You are officially on the list.
+              {typeof waitlistCount === "number" ? ` Your spot: #${WAITLIST_OFFSET + waitlistCount}.` : ""}
+            </p>
+            <div className={styles.waitlistModalBadges}>
+              <span>Early access</span>
+              <span>Priority updates</span>
+              <span>Agent + human pilots</span>
+            </div>
+            <button
+              className={`${styles.button} ${styles.buttonPrimary}`}
+              onClick={() => setShowWaitlistModal(false)}
+            >
+              Let’s go
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

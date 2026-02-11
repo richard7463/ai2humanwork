@@ -116,7 +116,10 @@ export default function LiveDemoPage() {
   const loadTasks = async () => {
     const res = await fetch("/api/tasks", { cache: "no-store" });
     const data = (await res.json()) as Task[];
-    setTasks(data);
+    const filtered = data.filter(
+      (task) => !/[\u4e00-\u9fff]/.test(`${task.title} ${task.acceptance}`)
+    );
+    setTasks(filtered);
   };
 
   const seedTasks = async () => {
