@@ -6,7 +6,7 @@ import styles from "./landing.module.css";
 
 const copy = {
   nav: {
-    demo: "Book Demo"
+    demo: "Join waitlist"
   },
   hero: {
     eyebrow: "Agentic Work Market",
@@ -15,7 +15,7 @@ const copy = {
     lead:
       "A two-way labor market: AI bids and executes automation; when it gets stuck, humans take over. Verifiable delivery, auditable settlement.",
     ctaPrimary: "Open Live Demo",
-    ctaSecondary: "Post a Task"
+    ctaSecondary: "Join waitlist"
   },
   meta: ["Verifiable output", "Human fallback network", "Auditable settlement"],
   section: {
@@ -54,7 +54,7 @@ const copy = {
       humanDesc: "When AI needs reality: photos, pickups, signatures, meetings, field notes."
     }
   },
-    footer: {
+  footer: {
     tag: "ai2human — Two-way labor market (Live Demo)",
     links: ["Live Demo", "Workflow", "Human Pool"]
   }
@@ -66,6 +66,8 @@ function repeat<T>(items: T[], times: number): T[] {
 
 export default function HomePage() {
   const [entrance, setEntrance] = useState<"hire" | "publish" | "human">("hire");
+  const [waitlistEmail, setWaitlistEmail] = useState("");
+  const [waitlistJoined, setWaitlistJoined] = useState(false);
 
   const t = copy;
 
@@ -237,9 +239,33 @@ export default function HomePage() {
         </div>
 
         <div className={styles.navActions}>
-          <button className={`${styles.button} ${styles.buttonPrimary} ${styles.navDemo}`}>
-            {t.nav.demo}
-          </button>
+          <form
+            id="waitlist"
+            className={styles.waitlist}
+            onSubmit={(event) => {
+              event.preventDefault();
+              if (!waitlistEmail.trim()) return;
+              setWaitlistJoined(true);
+            }}
+          >
+            <input
+              className={styles.waitlistInput}
+              type="email"
+              required
+              placeholder="you@company.com"
+              value={waitlistEmail}
+              onChange={(event) => {
+                setWaitlistEmail(event.target.value);
+                if (waitlistJoined) setWaitlistJoined(false);
+              }}
+            />
+            <button
+              className={`${styles.button} ${styles.buttonPrimary}`}
+              type="submit"
+            >
+              {waitlistJoined ? "Joined" : t.nav.demo}
+            </button>
+          </form>
         </div>
       </header>
 
@@ -258,12 +284,12 @@ export default function HomePage() {
             <p className={styles.lead}>{t.hero.lead}</p>
 
             <div className={styles.heroActions}>
-              <Link className={`${styles.button} ${styles.buttonPrimary}`} href="/mvp">
+              <Link className={`${styles.button} ${styles.buttonPrimary}`} href="/livedemo">
                 {t.hero.ctaPrimary}
               </Link>
-              <Link className={styles.button} href="/mvp#post-task">
+              <a className={styles.button} href="#waitlist">
                 {t.hero.ctaSecondary}
-              </Link>
+              </a>
             </div>
 
             <div className={styles.heroMeta}>
@@ -360,7 +386,7 @@ export default function HomePage() {
               <h2 className={styles.sectionTitle}>{t.section.liveTitle}</h2>
               <p className={styles.sectionDesc}>{t.section.liveDesc}</p>
             </div>
-            <Link className={`${styles.button} ${styles.buttonGhost}`} href="/mvp">
+            <Link className={`${styles.button} ${styles.buttonGhost}`} href="/livedemo">
               Live Demo
             </Link>
           </div>
@@ -397,11 +423,11 @@ export default function HomePage() {
               <p className={styles.sectionDesc}>{t.section.loopDesc}</p>
             </div>
             <div className={styles.loopActions}>
-              <Link className={`${styles.button} ${styles.buttonGhost}`} href="/mvp">
+              <Link className={`${styles.button} ${styles.buttonGhost}`} href="/livedemo">
                 {"Open Live Demo"}
               </Link>
-              <Link className={`${styles.button} ${styles.buttonPrimary}`} href="/mvp?demo=1">
-                {"One-click demo"}
+              <Link className={`${styles.button} ${styles.buttonPrimary}`} href="/livedemo">
+                {"Watch live"}
               </Link>
             </div>
           </div>
@@ -600,10 +626,10 @@ export default function HomePage() {
                 <div className={styles.previewActions}>
                   {entrance === "hire" && (
                     <>
-                      <Link className={`${styles.button} ${styles.buttonPrimary}`} href="/mvp">
+                      <Link className={`${styles.button} ${styles.buttonPrimary}`} href="/livedemo">
                         {"Start"}
                       </Link>
-                      <Link className={styles.button} href="/mvp#market">
+                      <Link className={styles.button} href="/livedemo#market">
                         {"Browse"}
                       </Link>
                     </>
@@ -702,8 +728,8 @@ export default function HomePage() {
             <div className={styles.footerCols}>
               <div>
                 <p className={styles.footerTitle}>{"Product"}</p>
-                <div className={styles.footerLinks}>
-                  <Link href="/mvp">{t.footer.links[0]}</Link>
+              <div className={styles.footerLinks}>
+                  <Link href="/livedemo">{t.footer.links[0]}</Link>
                   <a href="#live">{t.footer.links[1]}</a>
                   <a href="#loop">{"Loop"}</a>
                 </div>

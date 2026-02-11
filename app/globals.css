@@ -839,6 +839,53 @@ button {
   font-size: 18px;
 }
 
+.auto-status {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  margin: 12px 0 16px;
+}
+
+.auto-status div {
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(9, 10, 15, 0.55);
+  display: grid;
+  gap: 4px;
+}
+
+.auto-status span {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.auto-status strong {
+  font-size: 16px;
+}
+
+.auto-highlight {
+  display: grid;
+  gap: 6px;
+  padding: 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(124, 92, 255, 0.25);
+  background: rgba(18, 14, 28, 0.65);
+}
+
+.auto-highlight strong {
+  font-size: 14px;
+}
+
+.live-demo .task-card {
+  cursor: default;
+}
+
+.live-demo .task-card:hover {
+  transform: none;
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
 .mvp-muted {
   color: var(--muted);
   font-size: 13px;

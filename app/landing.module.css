@@ -113,6 +113,26 @@
   align-items: center;
 }
 
+.waitlist {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.waitlistInput {
+  min-width: 220px;
+  padding: 10px 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: rgba(9, 10, 15, 0.6);
+  color: var(--ln-text);
+  font-size: 13px;
+}
+
+.waitlistInput::placeholder {
+  color: rgba(255, 255, 255, 0.52);
+}
+
 .navMvp {
   display: inline-flex;
 }
@@ -1709,6 +1729,20 @@
     top: 12px;
     padding: 10px 12px;
     border-radius: 18px;
+  }
+
+  .navActions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+
+  .waitlist {
+    width: 100%;
+  }
+
+  .waitlistInput {
+    flex: 1;
+    min-width: 0;
   }
 
   .navLinks {
