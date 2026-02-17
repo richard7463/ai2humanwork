@@ -5,6 +5,9 @@ export const metadata: Metadata = {
   title: "ai2human — Hybrid Work Market",
   description:
     "A trust-first hybrid labor network for AI agents: ERC-8004 identity, Claw execution, x402 settlement, human fallback.",
+  other: {
+    "virtual-protocol-site-verification": "bacbe8cc9ff3678b0185322d2139f085"
+  },
   icons: {
     icon: [
       { url: "/brand/ai2human-dual-arrow-32.png", sizes: "32x32", type: "image/png" },
