@@ -43,9 +43,20 @@ export type WaitlistEntry = {
   createdAt: string;
 };
 
+export type PaymentEntry = {
+  id: string;
+  taskId: string;
+  amount: string;
+  receiver: string;
+  method: "mock_x402";
+  status: "paid";
+  createdAt: string;
+};
+
 type Db = {
   tasks: Task[];
   waitlist: WaitlistEntry[];
+  payments: PaymentEntry[];
 };
 
 export function makeSeedTasks(count: number): Task[] {
@@ -160,7 +171,7 @@ async function ensureDb(): Promise<void> {
     await fs.access(DB_PATH);
   } catch {
     await fs.mkdir(path.dirname(DB_PATH), { recursive: true });
-    const initial: Db = { tasks: makeSeedTasks(60), waitlist: [] };
+    const initial: Db = { tasks: makeSeedTasks(60), waitlist: [], payments: [] };
     await fs.writeFile(DB_PATH, JSON.stringify(initial, null, 2), "utf-8");
   }
 }
@@ -171,7 +182,8 @@ export async function readDb(): Promise<Db> {
   const parsed = JSON.parse(raw) as Db;
   return {
     tasks: parsed.tasks ?? [],
-    waitlist: parsed.waitlist ?? []
+    waitlist: parsed.waitlist ?? [],
+    payments: parsed.payments ?? []
   };
 }
 

@@ -3,6 +3,7 @@ import { updateDb } from "../../../../lib/store";
 import { checkAdminAuth } from "../../../../lib/adminAuth";
 import { canTransition, explainInvalidTransition } from "../../../../lib/taskStateMachine";
 import { appendTransitionEvidence } from "../../../../lib/taskEvidence";
+import crypto from "crypto";
 
 export const runtime = "nodejs";
 
@@ -37,6 +38,18 @@ export async function POST(
       from: previousStatus,
       to: "paid",
       action: "Payment settled (mock)"
+    });
+    const amount = task.budget?.trim() || "TBD";
+    const receiver =
+      task.assignee?.name || (previousStatus === "verified" ? "Verified Executor" : "Unknown");
+    db.payments.unshift({
+      id: crypto.randomUUID(),
+      taskId: task.id,
+      amount,
+      receiver,
+      method: "mock_x402",
+      status: "paid",
+      createdAt: task.updatedAt
     });
     updated = task;
   });

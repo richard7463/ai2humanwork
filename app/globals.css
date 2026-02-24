@@ -1277,6 +1277,66 @@ button {
   font-size: 13px;
 }
 
+.reviewer-metrics,
+.reviewer-ledger {
+  margin-bottom: 20px;
+}
+
+.reviewer-metric-grid {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+}
+
+.reviewer-metric-grid div {
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(9, 10, 15, 0.55);
+}
+
+.reviewer-metric-grid span {
+  display: block;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.reviewer-metric-grid strong {
+  font-size: 20px;
+}
+
+.reviewer-ledger-list {
+  display: grid;
+  gap: 10px;
+}
+
+.reviewer-ledger-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(9, 10, 15, 0.55);
+}
+
+.reviewer-ledger-item strong {
+  font-size: 16px;
+}
+
+.reviewer-ledger-item p {
+  margin: 4px 0 0;
+}
+
+.reviewer-ledger-meta {
+  display: grid;
+  gap: 3px;
+  justify-items: end;
+  color: var(--muted);
+  font-size: 12px;
+}
+
 .demo-auth {
   display: grid;
   gap: 8px;

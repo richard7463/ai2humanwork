@@ -34,6 +34,26 @@ type Task = {
   evidence: EvidenceItem[];
 };
 
+type Metrics = {
+  total: number;
+  created: number;
+  inProgress: number;
+  verified: number;
+  paid: number;
+  failed: number;
+  failRate: number;
+};
+
+type Payment = {
+  id: string;
+  taskId: string;
+  amount: string;
+  receiver: string;
+  method: "mock_x402";
+  status: "paid";
+  createdAt: string;
+};
+
 const statusLabels: Record<Task["status"], string> = {
   created: "Created",
   ai_running: "AI Running",
@@ -84,12 +104,24 @@ export default function ReviewerPage() {
   const [message, setMessage] = useState("");
   const [rejectReason, setRejectReason] = useState("Need more evidence");
   const [humanName, setHumanName] = useState("Demo Human");
+  const [metrics, setMetrics] = useState<Metrics | null>(null);
+  const [payments, setPayments] = useState<Payment[]>([]);
 
   const loadTasks = async () => {
     const res = await fetch("/api/tasks", { cache: "no-store" });
     const data = (await res.json()) as Task[];
     data.sort((a, b) => +new Date(b.updatedAt) - +new Date(a.updatedAt));
     setTasks(data);
+    const metricsRes = await fetch("/api/metrics", { cache: "no-store" });
+    if (metricsRes.ok) {
+      const metricsPayload = (await metricsRes.json()) as Metrics;
+      setMetrics(metricsPayload);
+    }
+    const paymentsRes = await fetch("/api/payments?limit=12", { cache: "no-store" });
+    if (paymentsRes.ok) {
+      const paymentPayload = (await paymentsRes.json()) as Payment[];
+      setPayments(paymentPayload);
+    }
     setLoading(false);
   };
 
@@ -190,6 +222,41 @@ export default function ReviewerPage() {
           </div>
         </div>
       </header>
+
+      <section className="market-card reviewer-metrics">
+        <div className="block-header">
+          <div>
+            <h2>Public metrics</h2>
+            <p className="mvp-muted">Operational visibility for closure health.</p>
+          </div>
+        </div>
+        <div className="reviewer-metric-grid">
+          <div>
+            <span>Created</span>
+            <strong>{metrics?.created ?? 0}</strong>
+          </div>
+          <div>
+            <span>In progress</span>
+            <strong>{metrics?.inProgress ?? 0}</strong>
+          </div>
+          <div>
+            <span>Verified</span>
+            <strong>{metrics?.verified ?? 0}</strong>
+          </div>
+          <div>
+            <span>Paid</span>
+            <strong>{metrics?.paid ?? 0}</strong>
+          </div>
+          <div>
+            <span>Fail rate</span>
+            <strong>{metrics ? `${metrics.failRate}%` : "0%"}</strong>
+          </div>
+          <div>
+            <span>Total</span>
+            <strong>{metrics?.total ?? 0}</strong>
+          </div>
+        </div>
+      </section>
 
       <section className="market-grid">
         <div className="market-card feed">
@@ -368,7 +435,34 @@ export default function ReviewerPage() {
           )}
         </div>
       </section>
+
+      <section className="market-card reviewer-ledger">
+        <div className="block-header">
+          <div>
+            <h2>Settlement ledger</h2>
+            <p className="mvp-muted">Latest mock settlements linked to task closure.</p>
+          </div>
+        </div>
+        {!payments.length && <div className="market-empty">No settlements yet.</div>}
+        {!!payments.length && (
+          <div className="reviewer-ledger-list">
+            {payments.map((payment) => (
+              <div key={payment.id} className="reviewer-ledger-item">
+                <div>
+                  <strong>{payment.amount}</strong>
+                  <p className="mvp-muted">
+                    {payment.receiver} · {payment.method}
+                  </p>
+                </div>
+                <div className="reviewer-ledger-meta">
+                  <span>{payment.taskId.slice(0, 8)}</span>
+                  <span>{new Date(payment.createdAt).toLocaleString()}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
     </div>
   );
 }
-
