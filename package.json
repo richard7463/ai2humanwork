@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "test": "node --test app/lib/*.test.js"
+    "test": "node --test app/lib/*.test.js",
+    "smoke:day7": "node scripts/smoke-day7.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.95.3",
