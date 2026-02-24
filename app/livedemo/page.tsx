@@ -97,12 +97,16 @@ const taskTypes = [
 const urgencyLevels = ["Urgent", "High", "Normal"];
 
 const MAX_VISIBLE_TASKS = 12;
+const DEMO_ADMIN_TOKEN = process.env.NEXT_PUBLIC_DEMO_ADMIN_TOKEN || "";
 
 export default function LiveDemoPage() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [seeding, setSeeding] = useState(false);
   const [demoRunningId, setDemoRunningId] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [adminToken, setAdminToken] = useState("");
+  const [demoError, setDemoError] = useState("");
+  const [lastEvent, setLastEvent] = useState("Idle");
 
   const stats = useMemo(() => {
     const total = tasks.length;
@@ -129,7 +133,7 @@ export default function LiveDemoPage() {
       await fetch("/api/tasks/seed", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ count: 12 })
+        body: JSON.stringify({ count: 12, mode: "created_only" })
       });
       await loadTasks();
     } finally {
@@ -138,8 +142,14 @@ export default function LiveDemoPage() {
   };
 
   useEffect(() => {
+    const localToken = window.localStorage.getItem("demo_admin_token") || "";
+    setAdminToken(localToken || DEMO_ADMIN_TOKEN);
     loadTasks();
   }, []);
+
+  useEffect(() => {
+    window.localStorage.setItem("demo_admin_token", adminToken);
+  }, [adminToken]);
 
   useEffect(() => {
     if (!tasks.length && !seeding) {
@@ -148,7 +158,7 @@ export default function LiveDemoPage() {
     }
     if (!tasks.length) return;
 
-    const hasOpen = tasks.some((task) => task.status !== "paid");
+    const hasOpen = tasks.some((task) => task.status === "created");
     if (!hasOpen && !seeding) {
       const timer = setTimeout(() => seedTasks(), 2400);
       return () => clearTimeout(timer);
@@ -156,7 +166,7 @@ export default function LiveDemoPage() {
 
     if (demoRunningId) return;
 
-    const nextTask = tasks.find((task) => task.status !== "paid");
+    const nextTask = tasks.find((task) => task.status === "created");
     if (!nextTask) return;
 
     const timer = setTimeout(() => {
@@ -178,25 +188,39 @@ export default function LiveDemoPage() {
   }, [tasks, selectedId]);
 
   const runAi = async (id: string, outcome: "success" | "fail") => {
-    await fetch(`/api/tasks/${id}/ai`, {
+    const res = await fetch(`/api/tasks/${id}/ai`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ outcome, note: "Auto run" })
     });
+    if (!res.ok) {
+      const payload = (await res.json().catch(() => ({}))) as { error?: string };
+      throw new Error(payload.error || "AI action failed");
+    }
     await loadTasks();
   };
 
+  const protectedHeaders = () => {
+    const headers: Record<string, string> = { "Content-Type": "application/json" };
+    if (adminToken.trim()) headers["x-admin-token"] = adminToken.trim();
+    return headers;
+  };
+
   const assignHuman = async (id: string, name = "Demo Human") => {
-    await fetch(`/api/tasks/${id}/human`, {
+    const res = await fetch(`/api/tasks/${id}/human`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: protectedHeaders(),
       body: JSON.stringify({ name })
     });
+    if (!res.ok) {
+      const payload = (await res.json().catch(() => ({}))) as { error?: string };
+      throw new Error(payload.error || "Assign human failed");
+    }
     await loadTasks();
   };
 
   const submitEvidence = async (id: string) => {
-    await fetch(`/api/tasks/${id}/evidence`, {
+    const res = await fetch(`/api/tasks/${id}/evidence`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -206,28 +230,57 @@ export default function LiveDemoPage() {
         url: ""
       })
     });
+    if (!res.ok) {
+      const payload = (await res.json().catch(() => ({}))) as { error?: string };
+      throw new Error(payload.error || "Evidence submission failed");
+    }
     await loadTasks();
   };
 
   const verifyTask = async (id: string) => {
-    await fetch(`/api/tasks/${id}/verify`, { method: "POST" });
+    const res = await fetch(`/api/tasks/${id}/verify`, {
+      method: "POST",
+      headers: protectedHeaders()
+    });
+    if (!res.ok) {
+      const payload = (await res.json().catch(() => ({}))) as { error?: string };
+      throw new Error(payload.error || "Verify failed");
+    }
     await loadTasks();
   };
 
   const settleTask = async (id: string) => {
-    await fetch(`/api/tasks/${id}/settle`, { method: "POST" });
+    const res = await fetch(`/api/tasks/${id}/settle`, {
+      method: "POST",
+      headers: protectedHeaders()
+    });
+    if (!res.ok) {
+      const payload = (await res.json().catch(() => ({}))) as { error?: string };
+      throw new Error(payload.error || "Settle failed");
+    }
     await loadTasks();
   };
 
   const runFullDemo = async (task: Task) => {
     if (demoRunningId) return;
     setDemoRunningId(task.id);
+    setDemoError("");
     try {
+      setLastEvent("AI started");
       await runAi(task.id, "fail");
+      setLastEvent("AI failed, dispatching human");
       await assignHuman(task.id);
+      setLastEvent("Human assigned, collecting evidence");
       await submitEvidence(task.id);
+      setLastEvent("Evidence submitted, verifying");
       await verifyTask(task.id);
+      setLastEvent("Verified, settling");
       await settleTask(task.id);
+      setLastEvent("Settled");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Demo run failed";
+      setDemoError(message);
+      setLastEvent(`Failed: ${message}`);
     } finally {
       setDemoRunningId(null);
     }
@@ -379,10 +432,27 @@ export default function LiveDemoPage() {
               <strong>~12s</strong>
             </div>
             <div>
+              <span>Admin auth</span>
+              <strong>{adminToken ? "Configured" : "Missing"}</strong>
+            </div>
+            <div>
               <span>Seed size</span>
               <strong>{MAX_VISIBLE_TASKS}</strong>
             </div>
           </div>
+          <p className="mvp-muted">Last event: {lastEvent}</p>
+          <div className="demo-auth">
+            <label htmlFor="demo-admin-token">Demo admin token</label>
+            <input
+              id="demo-admin-token"
+              className="mvp-input"
+              type="password"
+              placeholder="Optional in dev, required in protected prod"
+              value={adminToken}
+              onChange={(event) => setAdminToken(event.target.value)}
+            />
+          </div>
+          {demoError && <p className="demo-error">Loop paused: {demoError}</p>}
           <div className="auto-highlight">
             <p className="mvp-muted">Now running</p>
             <strong>{selectedTask ? selectedTask.title : "Seeding tasks..."}</strong>
