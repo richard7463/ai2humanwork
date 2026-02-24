@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { readDb, updateDb } from "../../lib/store";
+import { appendEvidence } from "../../lib/taskEvidence";
 
 export const runtime = "nodejs";
 
@@ -31,6 +32,13 @@ export async function POST(request: Request) {
     updatedAt: now,
     evidence: []
   };
+
+  appendEvidence(task, {
+    by: "system",
+    type: "log",
+    content: "Task created: none -> created",
+    createdAt: now
+  });
 
   await updateDb((db) => {
     db.tasks.unshift(task);

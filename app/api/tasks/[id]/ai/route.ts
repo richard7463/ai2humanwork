@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { updateDb } from "../../../../lib/store";
 import { canTransition, explainInvalidTransition } from "../../../../lib/taskStateMachine";
+import { appendEvidence, appendTransitionEvidence } from "../../../../lib/taskEvidence";
 
 export const runtime = "nodejs";
 
@@ -22,6 +23,7 @@ export async function POST(
     }
 
     const nextStatus = outcome === "success" ? "ai_done" : "ai_failed";
+    const previousStatus = task.status;
     if (!canTransition(task.status, nextStatus)) {
       transitionError = explainInvalidTransition(task.status, nextStatus);
       return;
@@ -30,15 +32,16 @@ export async function POST(
     task.assignee = { type: "ai", name: "Agent" };
     task.status = nextStatus;
     task.updatedAt = new Date().toISOString();
-    task.evidence.unshift({
-      id: crypto.randomUUID(),
+    appendTransitionEvidence(task, {
       by: "ai",
-      type: "log",
-      content:
-        outcome === "success"
-          ? `AI success: ${note}`
-          : `AI failed: ${note}`,
-      createdAt: new Date().toISOString()
+      from: previousStatus,
+      to: nextStatus,
+      action: outcome === "success" ? "AI execution success" : "AI execution failed"
+    });
+    appendEvidence(task, {
+      by: "ai",
+      type: "note",
+      content: `AI note: ${note}`
     });
     updated = task;
   });

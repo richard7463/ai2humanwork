@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { updateDb } from "../../../../lib/store";
 import { checkAdminAuth } from "../../../../lib/adminAuth";
 import { canTransition, explainInvalidTransition } from "../../../../lib/taskStateMachine";
+import { appendTransitionEvidence } from "../../../../lib/taskEvidence";
 
 export const runtime = "nodejs";
 
@@ -31,15 +32,15 @@ export async function POST(
       return;
     }
 
+    const previousStatus = task.status;
     task.assignee = { type: "human", name };
     task.status = "human_assigned";
     task.updatedAt = new Date().toISOString();
-    task.evidence.unshift({
-      id: crypto.randomUUID(),
+    appendTransitionEvidence(task, {
       by: "system",
-      type: "note",
-      content: `Human assigned: ${name}`,
-      createdAt: new Date().toISOString()
+      from: previousStatus,
+      to: "human_assigned",
+      action: `Human assigned (${name})`
     });
     updated = task;
   });

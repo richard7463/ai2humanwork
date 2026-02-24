@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { updateDb } from "../../../../lib/store";
 import { canTransition, explainInvalidTransition } from "../../../../lib/taskStateMachine";
+import { appendEvidence, appendTransitionEvidence } from "../../../../lib/taskEvidence";
 
 export const runtime = "nodejs";
 
@@ -23,12 +24,10 @@ export async function POST(
       return;
     }
 
-    task.evidence.unshift({
-      id: crypto.randomUUID(),
+    appendEvidence(task, {
       by,
       type,
-      content: type === "photo" ? url || "Photo evidence" : note || "Evidence submitted",
-      createdAt: new Date().toISOString()
+      content: type === "photo" ? url || "Photo evidence" : note || "Evidence submitted"
     });
 
     if (task.status === "human_assigned") {
@@ -36,7 +35,14 @@ export async function POST(
         transitionError = explainInvalidTransition(task.status, "human_done");
         return;
       }
+      const previousStatus = task.status;
       task.status = "human_done";
+      appendTransitionEvidence(task, {
+        by: "system",
+        from: previousStatus,
+        to: "human_done",
+        action: "Human evidence accepted"
+      });
     }
 
     task.updatedAt = new Date().toISOString();
