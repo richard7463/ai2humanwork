@@ -143,15 +143,19 @@ Task 最小字段：
 
 > 注：我们当前代码实现已覆盖上述 API（见 `app/api/tasks/...`）。
 
-## 12. 里程碑建议（10 个工作日）
-1. Day 1-2：任务发布/列表/状态机
-2. Day 3：任务详情（stepper + evidence 时间线）
-3. Day 4：人类派单（先手动）
-4. Day 5：人工验证 + mock 结算 + 账本记录
-5. Day 6-7：AI 执行接入（固定模板；或先半自动）
-6. Day 8：市场体验（Tab + 筛选 + 排序）
-7. Day 9：审计日志 + 最小风控
-8. Day 10：跑真实任务，修复与打磨
+## 12. 当前冲刺计划表（按“Agent 发单 -> Human 完成 -> 验证 -> 支付”）
+| 阶段 | 目标 | 实现方式（MVP） | API / 页面 | 状态 |
+|---|---|---|---|---|
+| P0-1 | Agent 抛出任务 | Agent 调平台下单接口，任务进入市场 | `POST /api/fallback-orders`、`/app/orders` | ✅ 已完成 |
+| P0-2 | 人才市场感知任务（Email 订阅） | 人才先订阅邮箱+技能+城市；新单创建时匹配并通知（先 mock 通知日志） | `POST /api/fallback-orders/subscriptions` | ✅ 已完成 |
+| P0-3 | 人类接单 | 抢/接单后绑定执行者，状态变更 | `POST /api/fallback-orders/:id/accept` | ✅ 已完成 |
+| P0-4 | 执行并提交证据 | 人类提交文本/图片证据并标记交付 | `POST /api/fallback-orders/:id/deliver` | ✅ 已完成 |
+| P0-5 | 通知 Agent 完成 | 平台回调 Agent webhook；失败可重试 | callback + `POST /api/fallback-orders/:id/notify` | ✅ 已完成 |
+| P0-6 | 验证是否完成 | Agent/管理员验收通过，任务进入 verified | `POST /api/fallback-orders/:id/verify` | ✅ 已完成 |
+| P0-7 | 支付 | 仅 verified 可结算，写 payment 账本（mock_x402） | `POST /api/fallback-orders/:id/settle` | ✅ 已完成 |
+| P1-1 | 通知“真发邮件” | 已接入 Resend adapter；无 key 时自动 fallback 到 mock 模式 | `app/lib/fallbackEmail.ts` | ✅ 已完成 |
+| P1-2 | Agent 验证签名 | webhook + verify 已支持 HMAC 签名与时间窗口校验 | `app/lib/requestSignature.js` | ✅ 已完成 |
+| P1-3 | 支付幂等与对账 | settle 已支持 `Idempotency-Key` 防重复支付 | `POST /api/fallback-orders/:id/settle` | ✅ 已完成 |
 
 ## 13. 当前实现映射（Repo）
 已落地的 MVP 关键路径（供开发快速定位）：
@@ -164,6 +168,14 @@ Task 最小字段：
   - 证据：`app/api/tasks/[id]/evidence/route.ts`
   - 验证：`app/api/tasks/[id]/verify/route.ts`
   - 结算：`app/api/tasks/[id]/settle/route.ts`
+- Agent -> Human 闭环 API（当前主线）：
+  - 下单：`app/api/fallback-orders/route.ts`
+  - 邮件订阅：`app/api/fallback-orders/subscriptions/route.ts`
+  - 接单：`app/api/fallback-orders/[id]/accept/route.ts`
+  - 交付：`app/api/fallback-orders/[id]/deliver/route.ts`
+  - 通知重试：`app/api/fallback-orders/[id]/notify/route.ts`
+  - 验证：`app/api/fallback-orders/[id]/verify/route.ts`
+  - 支付：`app/api/fallback-orders/[id]/settle/route.ts`
 
 ---
 
