@@ -145,7 +145,7 @@ export function buildTransferWithAuthorizationTypedData(
     verifyingContract: `0x${string}`;
     version?: string;
   } = {
-    name: String(extra.name || extra.symbol || "USDT"),
+    name: String(extra.name || extra.symbol || "USD₮0"),
     chainId: XLAYER_CHAIN_ID,
     verifyingContract: requirement.asset as `0x${string}`
   };

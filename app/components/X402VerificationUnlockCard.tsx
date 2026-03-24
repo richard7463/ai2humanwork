@@ -12,6 +12,10 @@ import {
   type X402Challenge,
   type X402Requirement
 } from "../lib/x402Shared";
+import {
+  DEFAULT_SETTLEMENT_TOKEN_NAME,
+  DEFAULT_SETTLEMENT_TOKEN_SYMBOL
+} from "../lib/assetLabels.js";
 
 type UnlockTask = {
   id: string;
@@ -200,7 +204,8 @@ export default function X402VerificationUnlockCard({ task }: { task: UnlockTask 
         <div>
           <h2>x402 Verification Bundle</h2>
           <p className="mvp-muted">
-            Pay with the executor wallet to unlock the structured proof bundle on X Layer.
+            Pay with the executor wallet to unlock the structured proof bundle on X Layer. This is
+            the bonus proof-access layer on top of the main settlement loop.
           </p>
         </div>
         <span className={`status-pill ${readyForUnlock ? "status-verified" : "status-created"}`}>
@@ -229,7 +234,7 @@ export default function X402VerificationUnlockCard({ task }: { task: UnlockTask 
         </div>
         <div>
           <span>Bundle price</span>
-          <strong>{challengeMeta?.priceLabel || "x402 challenge"}</strong>
+          <strong>{challengeMeta?.priceLabel || `0.01 ${DEFAULT_SETTLEMENT_TOKEN_SYMBOL}`}</strong>
         </div>
         <div>
           <span>Network</span>
@@ -276,10 +281,16 @@ export default function X402VerificationUnlockCard({ task }: { task: UnlockTask 
             <div className="mvp-evidence-item">
               <div className="evidence-meta">
                 <span>x402 settlement</span>
-                <span>{result.payment.tokenSymbol || result.x402?.symbol || "USDT"}</span>
+                <span>
+                  {result.payment.tokenSymbol || result.x402?.symbol || DEFAULT_SETTLEMENT_TOKEN_SYMBOL}
+                </span>
               </div>
               <p>
-                Paid {result.payment.amount} {result.payment.tokenSymbol || result.x402?.symbol || ""}
+                Paid{" "}
+                {result.payment.amount}{" "}
+                {result.payment.tokenSymbol ||
+                  result.x402?.symbol ||
+                  DEFAULT_SETTLEMENT_TOKEN_NAME}
               </p>
               <p className="mvp-muted">Payer: {shortAddress(result.payment.payerAddress)}</p>
               {result.payment.explorerUrl && result.payment.txHash && (

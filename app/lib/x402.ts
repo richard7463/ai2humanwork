@@ -27,13 +27,13 @@ import {
   type X402Requirement
 } from "./x402Shared";
 
-const DEFAULT_XLAYER_RPC_URL = "https://rpc.xlayer.tech";
+const DEFAULT_XLAYER_RPC_URL = "https://xlayer.drpc.org";
 const DEFAULT_XLAYER_EXPLORER_URL = "https://www.oklink.com/xlayer";
 const DEFAULT_TIMEOUT_SECONDS = 300;
 const DEFAULT_PROOF_PRICE = "0.01";
 
-const DEFAULT_USDT = {
-  symbol: "USDT",
+const DEFAULT_USDT0 = {
+  symbol: "USDT0",
   address: "0x779ded0c9e1022225f8e0630b35a9b54be713736",
   decimals: 6,
   name: "USD₮0",
@@ -84,9 +84,9 @@ function buildExplorerUrl(baseUrl: string, txHash: string): string {
 }
 
 function resolveDefaultAsset() {
-  const preferred = String(process.env.XLAYER_X402_TOKEN || "USDT").trim().toUpperCase();
+  const preferred = String(process.env.XLAYER_X402_TOKEN || "USDT0").trim().toUpperCase();
   if (preferred === "USDC") return DEFAULT_USDC;
-  return DEFAULT_USDT;
+  return DEFAULT_USDT0;
 }
 
 function safeAddress(value: string, fallback = "") {

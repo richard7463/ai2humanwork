@@ -8,11 +8,16 @@ import {
   type HumanService
 } from "./humanMarketplace";
 import {
+  DEFAULT_X_TASK_BUDGET,
   DEFAULT_TARGET_URL,
   DEFAULT_REPLY_TARGET_URL,
   buildOfficialCampaignTask,
-  getOfficialCampaignTemplates
+  buildRealWorldTask,
+  DEFAULT_REAL_WORLD_TASK_BUDGET,
+  getOfficialCampaignTemplates,
+  getRealWorldTaskTemplates
 } from "./officialCampaignTasks.js";
+import { formatSettlementBudget } from "./assetLabels.js";
 
 export type TaskStatus =
   | "created"
@@ -41,13 +46,16 @@ export type Task = {
   campaign?: {
     requesterName: string;
     requesterHandle?: string;
-    platform: "x";
-    action: "post" | "quote" | "reply" | "repost";
+    platform: "x" | "real_world";
+    action: string;
+    label?: string;
     targetUrl?: string;
+    targetLabel?: string;
     proofPhrase?: string;
     brief?: string;
     proofRequirements: string[];
     verificationChecks: string[];
+    submissionFields?: string[];
   };
   status: TaskStatus;
   createdAt: string;
@@ -164,9 +172,25 @@ type Db = {
 };
 
 export function makeSeedTasks(count: number): Task[] {
-  const templates = getOfficialCampaignTemplates();
-  const budgets = ["18 USDT", "24 USDT", "35 USDT", "48 USDT", "60 USDT", "80 USDT"];
-  const deadlines = ["2h", "4h", "6h", "12h", "24h", "48h"];
+  const xTemplates = getOfficialCampaignTemplates().map((template) => ({
+    kind: "x" as const,
+    template
+  }));
+  const realWorldTemplates = getRealWorldTaskTemplates().map((template) => ({
+    kind: "real_world" as const,
+    template
+  }));
+  const templates = [...realWorldTemplates, ...xTemplates];
+  const realWorldBudgets = [
+    formatSettlementBudget("18"),
+    formatSettlementBudget("24"),
+    formatSettlementBudget("35"),
+    formatSettlementBudget("48"),
+    formatSettlementBudget("60"),
+    formatSettlementBudget("80"),
+    formatSettlementBudget("95")
+  ];
+  const deadlines = ["2h", "4h", "6h", "12h", "24h", "48h", "72h"];
   const humanWallets = [
     "0x1111111111111111111111111111111111111111",
     "0x2222222222222222222222222222222222222222",
@@ -174,6 +198,30 @@ export function makeSeedTasks(count: number): Task[] {
     "0x4444444444444444444444444444444444444444"
   ];
   const targetUrls = [DEFAULT_TARGET_URL, DEFAULT_REPLY_TARGET_URL];
+  const proofAssets = [
+    "/freelance-hero.jpg",
+    "/freelance-desk.jpg",
+    "/freelance-team.jpg",
+    "/brand/ai2human-promo-1.png",
+    "/brand/ai2human-promo-2.png",
+    "/brand/ai2human-promo-3.png"
+  ];
+  const locationNotes = [
+    "Blue Bottle Coffee, Market Street storefront",
+    "Midtown 7-Eleven beverage shelf",
+    "WeWork front desk handoff counter",
+    "Lobby package locker C12",
+    "Lunch counter menu board",
+    "South Hall main entrance queue"
+  ];
+  const requesterNames = [
+    "Retail Ops Desk",
+    "Local Verification Desk",
+    "Field Logistics Agent",
+    "Partner Success Ops",
+    "Store Audit Desk",
+    "Event Access Agent"
+  ];
 
   const statuses: TaskStatus[] = [
     "created",
@@ -196,23 +244,39 @@ export function makeSeedTasks(count: number): Task[] {
     const createdAt = new Date(now - i * 1000 * 60 * 17).toISOString();
     const updatedAt = new Date(now - i * 1000 * 60 * 5).toISOString();
     const id = crypto.randomUUID();
-    const template = templates[i % templates.length];
-    const campaignTask = buildOfficialCampaignTask({
-      templateId: template.id,
-      requesterName: "ai2human Official",
-      requesterHandle: "@ai2humanwork",
-      targetUrl: targetUrls[i % targetUrls.length],
-      budget: budgets[i % budgets.length],
-      deadline: deadlines[i % deadlines.length],
-      brief:
-        template.action === "repost"
-          ? "Make the repost visible on your timeline so the reviewer can verify it quickly."
-          : "Use your own X account, keep the post live, and include the requested campaign CTA."
-    });
+    const scenario = templates[i % templates.length];
+    const template = scenario.template;
+    const campaignTask =
+      scenario.kind === "x"
+        ? buildOfficialCampaignTask({
+            templateId: template.id,
+            requesterName: "ai2human Official",
+            requesterHandle: "@ai2humanwork",
+            targetUrl: targetUrls[i % targetUrls.length],
+            budget: DEFAULT_X_TASK_BUDGET,
+            deadline: deadlines[i % deadlines.length],
+            brief:
+              template.action === "repost"
+                ? "Make the repost visible on your timeline so the reviewer can verify it quickly."
+                : "Use your own X account, keep the post live, and include the requested campaign CTA."
+          })
+        : buildRealWorldTask({
+            templateId: template.id,
+            requesterName: requesterNames[i % requesterNames.length],
+            budget:
+              realWorldBudgets[i % realWorldBudgets.length] || DEFAULT_REAL_WORLD_TASK_BUDGET,
+            deadline: deadlines[i % deadlines.length],
+            brief: template.defaultBrief
+          });
     const proofPhrase = campaignTask.campaign?.proofPhrase;
     const executorHandle = `@operator${(i % 8) + 1}`;
     const postUrl = `https://x.com/${executorHandle.slice(1)}/status/${1902000000000000000 + i}`;
     const profileUrl = `https://x.com/${executorHandle.slice(1)}`;
+    const locationNote = locationNotes[i % locationNotes.length];
+    const timestampNote = `Checked at ${new Date(now - i * 1000 * 60 * 3).toLocaleString("en-US", {
+      hour12: false
+    })}`;
+    const proofAsset = proofAssets[i % proofAssets.length];
 
     const evidence: EvidenceItem[] = [];
     const addEvidence = (by: EvidenceItem["by"], type: EvidenceItem["type"], content: string) => {
@@ -229,42 +293,66 @@ export function makeSeedTasks(count: number): Task[] {
       addEvidence(
         "ai",
         "log",
-        "AI running: evaluating whether this official X campaign task can be completed without a human executor"
+        scenario.kind === "x"
+          ? "AI running: evaluating whether this official X campaign task can be completed without a human executor"
+          : "AI running: checking whether this task can stay autonomous or needs a local human operator"
       );
     }
     if (status === "ai_failed") {
       addEvidence(
         "ai",
         "log",
-        "AI failed: social distribution action requires a human-owned X account before settlement can clear"
+        scenario.kind === "x"
+          ? "AI failed: social distribution action requires a human-owned X account before settlement can clear"
+          : "AI failed: real-world execution requires an on-site human to collect proof before settlement can clear"
       );
     }
     if (status === "ai_done") {
       addEvidence(
         "ai",
         "note",
-        `AI note: campaign brief prepared for ${campaignTask.campaign?.requesterHandle || "@official"}`
+        scenario.kind === "x"
+          ? `AI note: campaign brief prepared for ${campaignTask.campaign?.requesterHandle || "@official"}`
+          : `AI note: visit brief prepared for ${campaignTask.campaign?.requesterName || "ops desk"}`
       );
     }
     if (status === "human_assigned") {
-      addEvidence("system", "log", `Human assigned: ${executorHandle}`);
+      addEvidence(
+        "system",
+        "log",
+        `Human assigned: ${scenario.kind === "x" ? executorHandle : `field-operator-${(i % 6) + 1}`}`
+      );
     }
     if (status === "human_done" || status === "verified" || status === "paid") {
-      addEvidence("human", "note", `executor_handle: ${executorHandle}`);
-      if (campaignTask.campaign?.action === "repost") {
-        addEvidence("human", "note", `profile_url: ${profileUrl}`);
+      if (scenario.kind === "x") {
+        addEvidence("human", "note", `executor_handle: ${executorHandle}`);
+        if (campaignTask.campaign?.action === "repost") {
+          addEvidence("human", "note", `profile_url: ${profileUrl}`);
+        } else {
+          addEvidence("human", "note", `post_url: ${postUrl}`);
+        }
+        addEvidence("human", "photo", `/brand/ai2human-social-${(i % 3) + 1}.png`);
+        if (proofPhrase) {
+          addEvidence("human", "note", `proof_phrase: ${proofPhrase}`);
+        }
+        addEvidence(
+          "human",
+          "note",
+          `summary: Completed ${campaignTask.campaign?.action || "campaign"} task for ${campaignTask.campaign?.requesterHandle || "@official"} and kept the result live for review.`
+        );
       } else {
-        addEvidence("human", "note", `post_url: ${postUrl}`);
+        addEvidence("human", "photo", proofAsset);
+        addEvidence("human", "note", `location_note: ${locationNote}`);
+        addEvidence("human", "note", `timestamp_note: ${timestampNote}`);
+        if (proofPhrase) {
+          addEvidence("human", "note", `proof_phrase: ${proofPhrase}`);
+        }
+        addEvidence(
+          "human",
+          "note",
+          `summary: Completed the ${campaignTask.campaign?.label || "field"} task on-site and returned the requested proof package for reviewer approval.`
+        );
       }
-      addEvidence("human", "photo", `/brand/ai2human-social-${(i % 3) + 1}.png`);
-      if (proofPhrase) {
-        addEvidence("human", "note", `proof_phrase: ${proofPhrase}`);
-      }
-      addEvidence(
-        "human",
-        "note",
-        `summary: Completed ${campaignTask.campaign?.action || "campaign"} task for ${campaignTask.campaign?.requesterHandle || "@official"} and kept the result live for review.`
-      );
     }
     if (status === "verified") addEvidence("system", "log", "Verification checklist passed");
     if (status === "paid") {
@@ -276,7 +364,7 @@ export function makeSeedTasks(count: number): Task[] {
       status === "human_assigned" || status === "human_done"
         ? {
             type: "human" as const,
-            name: "X Layer Operator",
+            name: scenario.kind === "x" ? "X Layer Operator" : "Field Operator",
             walletAddress: humanWallets[i % humanWallets.length]
           }
         : status === "ai_running" || status === "ai_done" || status === "ai_failed"
@@ -312,7 +400,7 @@ export function makeSeedFallbackOrders(count: number): FallbackOrder[] {
     "verified",
     "paid"
   ];
-  const budgets = ["55 USDC", "75 USDC", "120 USDC", "150 USDC", "220 USDC"];
+  const budgets = ["55", "75", "120", "150", "220"].map((value) => formatSettlementBudget(value));
   const deadlines = ["1h", "2h", "4h", "6h", "12h"];
   const locations = ["Shanghai", "Austin", "Berlin", "Singapore", "Tokyo"];
 

@@ -4,6 +4,7 @@ import { checkAdminAuth } from "../../../../lib/adminAuth";
 import { canTransition, explainInvalidTransition } from "../../../../lib/taskStateMachine";
 import { appendEvidence, appendTransitionEvidence } from "../../../../lib/taskEvidence";
 import crypto from "crypto";
+import { DEFAULT_SETTLEMENT_TOKEN_SYMBOL } from "../../../../lib/assetLabels.js";
 import { executeXLayerSettlement } from "../../../../lib/xlayerSettlement";
 
 export const runtime = "nodejs";
@@ -62,7 +63,7 @@ export async function POST(
         by: "system",
         type: "note",
         content: `agent_event: settlement_agent | Released ${settlement.amount} ${
-          settlement.tokenSymbol || "USDC"
+          settlement.tokenSymbol || DEFAULT_SETTLEMENT_TOKEN_SYMBOL
         } via ${settlement.method}.`
       });
       if (settlement.configurationHint && settlement.method === "mock_x402") {

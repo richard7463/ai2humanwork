@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
+import { formatSettlementBudget } from "./lib/assetLabels.js";
 import styles from "./landing.module.css";
 
 const copy = {
@@ -17,7 +18,7 @@ const copy = {
       "When an agent needs a storefront check, signature, pickup, or in-person confirmation, ai2human dispatches a human operator, collects structured proof, verifies completion, and settles on X Layer.",
     ctaPrimary: "Open Live Demo",
     ctaSecondary: "Open Reviewer",
-    ctaTertiary: "Get Build Updates"
+    ctaTertiary: "Open Submission Proof"
   },
   meta: ["human fallback infra", "proof-first execution", "x layer settlement"],
   section: {
@@ -78,7 +79,7 @@ const copy = {
   },
   footer: {
     tag: "ai2human — Human fallback infrastructure for agents on X Layer",
-    links: ["Live Demo", "Proof Flow", "Operator Pool"]
+    links: ["Live Demo", "Submission Proof", "Reviewer Console"]
   }
 } as const;
 
@@ -105,31 +106,31 @@ export default function HomePage() {
     const tasks = [
       {
         title: "Storefront stock check before merchant payout",
-        meta: "Shanghai · 80 USDC · 2h",
+        meta: `Shanghai · ${formatSettlementBudget("80")} · 2h`,
         badge: "blocked",
         tags: ["store", "proof", "verify"]
       },
       {
         title: "Signed receipt capture for high-value handoff",
-        meta: "Hong Kong · 220 USDC · 6h",
+        meta: `Hong Kong · ${formatSettlementBudget("220")} · 6h`,
         badge: "needs human",
         tags: ["receipt", "handoff", "proof"]
       },
       {
         title: "Retail shelf audit with timestamped photos",
-        meta: "Singapore · 399 USDC · 12h",
+        meta: `Singapore · ${formatSettlementBudget("399")} · 12h`,
         badge: "review",
         tags: ["audit", "photo", "review"]
       },
       {
         title: "Pickup handoff with receiver confirmation",
-        meta: "Dubai · 99 USDC · 2h",
+        meta: `Dubai · ${formatSettlementBudget("99")} · 2h`,
         badge: "settled",
         tags: ["pickup", "confirm", "settle"]
       },
       {
         title: "On-site inventory check with receipt image",
-        meta: "Seoul · 120 USDC · 4h",
+        meta: `Seoul · ${formatSettlementBudget("120")} · 4h`,
         badge: "needs human",
         tags: ["offline", "photo", "verify"]
       }
@@ -142,31 +143,31 @@ export default function HomePage() {
     const humans = [
       {
         title: "Shanghai · store visit / receipt capture",
-        meta: "55 USDC · ready in 2 hours",
+        meta: `${formatSettlementBudget("55")} · ready in 2 hours`,
         badge: "available",
         tags: ["photo", "proof", "fast"]
       },
       {
         title: "Hong Kong · handoff / recipient verification",
-        meta: "68 USDC · same day",
+        meta: `${formatSettlementBudget("68")} · same day`,
         badge: "available",
         tags: ["receipt", "verify", "proof"]
       },
       {
         title: "Singapore · shelf audit / photo evidence",
-        meta: "40 USDC · same day",
+        meta: `${formatSettlementBudget("40")} · same day`,
         badge: "available",
         tags: ["pickup", "delivery", "proof"]
       },
       {
         title: "Dubai · signature / pickup",
-        meta: "75 USDC · high priority",
+        meta: `${formatSettlementBudget("75")} · high priority`,
         badge: "available",
         tags: ["verify", "photo", "proof"]
       },
       {
         title: "Seoul · identity check / handoff",
-        meta: "90 USDC · video ok",
+        meta: `${formatSettlementBudget("90")} · video ok`,
         badge: "available",
         tags: ["sign", "proof", "urgent"]
       }
@@ -194,7 +195,7 @@ export default function HomePage() {
       },
       {
         title: "Settlement ledger · latest tx hash",
-        meta: "linked to X Layer explorer",
+        meta: "linked to an onchain explorer",
         tags: ["ledger", "tx", "proof"]
       },
       {
@@ -231,7 +232,7 @@ export default function HomePage() {
     const rows = [
       { label: "task", value: "T-18F2" },
       { label: "payee", value: "X Layer Operator" },
-      { label: "amount", value: "120.00 USDC" },
+      { label: "amount", value: formatSettlementBudget("120.00") },
       { label: "method", value: "xlayer_erc20" },
       { label: "status", value: "paid" }
     ];
@@ -362,9 +363,9 @@ export default function HomePage() {
               <Link className={`${styles.button} ${styles.buttonGhost}`} href="/reviewer">
                 {t.hero.ctaSecondary}
               </Link>
-              <a className={styles.button} href="#waitlist">
+              <Link className={styles.button} href="/submission">
                 {t.hero.ctaTertiary}
-              </a>
+              </Link>
             </div>
 
             <div className={styles.heroMeta}>
@@ -381,7 +382,7 @@ export default function HomePage() {
             <div className={styles.marketWidget}>
               <div className={styles.widgetInner}>
                 <div className={styles.widgetTop}>
-                  <span className={styles.widgetTitle}>LIVE MARKET</span>
+                  <span className={styles.widgetTitle}>LIVE FALLBACK LOOP</span>
                 </div>
 
                 <div className={styles.marketCols}>
@@ -389,7 +390,7 @@ export default function HomePage() {
                     <div className={styles.marketColHead}>
                       <span>{"Tasks"}</span>
                       <span className={`${styles.badge} ${styles.badgeAI}`}>
-                        {"AI bidding"}
+                        {"dispatching"}
                       </span>
                     </div>
                     <div className={styles.scroller}>
@@ -421,7 +422,7 @@ export default function HomePage() {
                     <div className={styles.marketColHead}>
                       <span>{"Humans"}</span>
                       <span className={`${styles.badge} ${styles.badgeHuman}`}>
-                        {"rentable"}
+                        {"on-call"}
                       </span>
                     </div>
                     <div className={styles.scroller}>
@@ -487,16 +488,16 @@ export default function HomePage() {
 
           <div className={styles.liveStats}>
             <div className={styles.stat}>
-              <p>{"New tasks today"}</p>
-              <strong>1,764</strong>
+              <p>{"Proven X Layer tx"}</p>
+              <strong>1</strong>
             </div>
             <div className={styles.stat}>
-              <p>{"Agents online"}</p>
-              <strong>3,912</strong>
+              <p>{"Auditable loop stages"}</p>
+              <strong>5</strong>
             </div>
             <div className={styles.stat}>
-              <p>{"Humans on-call"}</p>
-              <strong>105,766</strong>
+              <p>{"Bonus proof layer"}</p>
+              <strong>x402-ready</strong>
             </div>
           </div>
 
@@ -504,9 +505,9 @@ export default function HomePage() {
             <a className={styles.button} href="#loop">
               {"See loop →"}
             </a>
-            <a className={styles.button} href="#entrances">
-              {"See entrances →"}
-            </a>
+            <Link className={styles.button} href="/submission">
+              {"Open proof →"}
+            </Link>
           </div>
         </section>
 
@@ -548,7 +549,7 @@ export default function HomePage() {
             <div className={styles.board}>
               <div className={styles.boardHead}>
                 <span className={styles.boardKicker}>{t.section.loopBoards.console}</span>
-                <span className={`${styles.badge} ${styles.badgeAI}`}>claw</span>
+                <span className={`${styles.badge} ${styles.badgeAI}`}>verify</span>
               </div>
               <div className={styles.terminal}>
                 <div className={styles.terminalTop}>
@@ -814,18 +815,18 @@ export default function HomePage() {
             <div className={styles.footerCols}>
               <div>
                 <p className={styles.footerTitle}>{"Product"}</p>
-              <div className={styles.footerLinks}>
+                <div className={styles.footerLinks}>
                   <Link href="/livedemo">{t.footer.links[0]}</Link>
-                  <a href="#live">{t.footer.links[1]}</a>
+                  <Link href="/submission">{t.footer.links[1]}</Link>
                   <a href="#loop">{"Loop"}</a>
                 </div>
               </div>
               <div>
                 <p className={styles.footerTitle}>{"Entrances"}</p>
                 <div className={styles.footerLinks}>
-                  <a href="#entrances">{t.footer.links[2]}</a>
-                  <a href="#entrances">{"Reviewer"}</a>
-                  <a href="#entrances">{"Task buyer"}</a>
+                  <Link href="/reviewer">{t.footer.links[2]}</Link>
+                  <Link href="/tasks">{"Task board"}</Link>
+                  <Link href="/app/profile">{"Operator profile"}</Link>
                 </div>
               </div>
             </div>

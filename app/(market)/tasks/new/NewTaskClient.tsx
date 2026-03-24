@@ -5,9 +5,14 @@ import { useRouter } from "next/navigation";
 import { usePrivy } from "@privy-io/react-auth";
 import styles from "../../market.module.css";
 import {
+  DEFAULT_X_TASK_BUDGET,
   getDefaultTargetUrlForTemplate,
   getOfficialCampaignTemplates
 } from "../../../lib/officialCampaignTasks.js";
+import {
+  DEFAULT_SETTLEMENT_TOKEN_SYMBOL,
+  stripBudgetAmount
+} from "../../../lib/assetLabels.js";
 
 const TEMPLATES = getOfficialCampaignTemplates();
 
@@ -92,7 +97,7 @@ function CampaignFields(props: FieldsProps) {
 
       <div className={styles.row2}>
         <div className={styles.field}>
-          <label>Reward (USDT)</label>
+          <label>{`Reward (${DEFAULT_SETTLEMENT_TOKEN_SYMBOL})`}</label>
           <input
             className={styles.input}
             value={props.reward}
@@ -158,7 +163,7 @@ function NewTaskStatic() {
   const [requesterName, setRequesterName] = useState("ai2human Official");
   const [requesterHandle, setRequesterHandle] = useState("@ai2humanwork");
   const [targetUrl, setTargetUrl] = useState(getDefaultTargetUrlForTemplate(TEMPLATES[0]?.id));
-  const [reward, setReward] = useState("25");
+  const [reward, setReward] = useState(stripBudgetAmount(DEFAULT_X_TASK_BUDGET));
   const [duration, setDuration] = useState("24");
   const [proofPhrase, setProofPhrase] = useState("");
   const [brief, setBrief] = useState("Amplify the official post and keep the result live for review.");
@@ -202,7 +207,7 @@ function NewTaskPrivy() {
   const [requesterName, setRequesterName] = useState("ai2human Official");
   const [requesterHandle, setRequesterHandle] = useState("@ai2humanwork");
   const [targetUrl, setTargetUrl] = useState(getDefaultTargetUrlForTemplate(TEMPLATES[0]?.id));
-  const [reward, setReward] = useState("25");
+  const [reward, setReward] = useState(stripBudgetAmount(DEFAULT_X_TASK_BUDGET));
   const [duration, setDuration] = useState("24");
   const [proofPhrase, setProofPhrase] = useState("");
   const [brief, setBrief] = useState("Amplify the official post and keep the result live for review.");
@@ -238,7 +243,7 @@ function NewTaskPrivy() {
           requesterName,
           requesterHandle,
           targetUrl,
-          budget: `${reward} USDT`,
+          budget: `${reward} ${DEFAULT_SETTLEMENT_TOKEN_SYMBOL}`,
           deadline: `${duration}h`,
           proofPhrase,
           brief

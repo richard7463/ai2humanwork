@@ -49,9 +49,9 @@ const routeMeta = [
   },
   {
     match: (pathname: string) => pathname.startsWith("/app/humans"),
-    eyebrow: "Human marketplace",
+    eyebrow: "Fallback operators",
     title: "Browse people who can close the last mile",
-    description: "Find human operators by trust, location, skills, and execution history."
+    description: "Find human operators by trust, location coverage, skills, and proof quality."
   },
   {
     match: (pathname: string) => pathname.startsWith("/app/services"),
@@ -69,7 +69,7 @@ const routeMeta = [
     match: (pathname: string) => pathname.startsWith("/app/profile"),
     eyebrow: "Identity",
     title: "Manage your operator profile and listings",
-    description: "Connect a wallet, publish your profile, and expose services to the marketplace."
+    description: "Connect a wallet, publish your profile, and make yourself dispatch-ready for fallback tasks."
   }
 ];
 
@@ -77,8 +77,8 @@ function getMeta(pathname: string) {
   return (
     routeMeta.find((item) => item.match(pathname)) || {
       eyebrow: "ai2human app",
-      title: "Human + AI execution market",
-      description: "A modern operator console for human fallback, evidence, and settlement."
+      title: "Human fallback control plane",
+      description: "A modern operator console for fallback execution, structured proof, and settlement."
     }
   );
 }
@@ -102,7 +102,7 @@ export default function AppChrome({ children }: { children: ReactNode }) {
               />
               <div>
                 <p className={styles.brandName}>ai2human</p>
-                <p className={styles.brandTag}>two-way labor market</p>
+                <p className={styles.brandTag}>human fallback network</p>
               </div>
             </Link>
             <div className={styles.brandBadge}>Public beta</div>

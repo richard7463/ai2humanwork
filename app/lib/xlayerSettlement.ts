@@ -28,10 +28,10 @@ export type SettlementReceipt = {
   configurationHint?: string;
 };
 
-const DEFAULT_XLAYER_RPC_URL = "https://rpc.xlayer.tech";
+const DEFAULT_XLAYER_RPC_URL = "https://xlayer.drpc.org";
 const DEFAULT_XLAYER_EXPLORER_URL = "https://www.oklink.com/xlayer";
 const DEFAULT_XLAYER_CHAIN_ID = 196;
-const DEFAULT_TOKEN_SYMBOL = "USDC";
+const DEFAULT_TOKEN_SYMBOL = "USDT0";
 const DEFAULT_TOKEN_DECIMALS = 6;
 
 function normalizePrivateKey(value: string): `0x${string}` {

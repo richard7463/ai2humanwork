@@ -1,9 +1,13 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { getTaskVerificationStatus } from "../lib/officialCampaignTasks.js";
+import {
+  getTaskSubmissionFields,
+  getTaskVerificationStatus
+} from "../lib/officialCampaignTasks.js";
 import { getTaskAgentArchitecture } from "../lib/agentArchitecture.js";
 import X402VerificationUnlockCard from "../components/X402VerificationUnlockCard";
+import { formatBudgetLabel } from "../lib/assetLabels.js";
 
 type EvidenceItem = {
   id: string;
@@ -22,13 +26,16 @@ type Task = {
   campaign?: {
     requesterName: string;
     requesterHandle?: string;
-    platform: "x";
-    action: "post" | "quote" | "reply" | "repost";
+    platform: "x" | "real_world";
+    action: string;
+    label?: string;
     targetUrl?: string;
+    targetLabel?: string;
     proofPhrase?: string;
     brief?: string;
     proofRequirements: string[];
     verificationChecks: string[];
+    submissionFields?: string[];
   };
   status:
     | "created"
@@ -230,12 +237,27 @@ export default function LiveDemoPage() {
   };
 
   const submitEvidence = async (task: Task) => {
+    const submissionFields = getTaskSubmissionFields(task);
     const executorHandle = `@demooperator${task.id.replace(/-/g, "").slice(0, 4)}`;
     const postUrl = `https://x.com/${executorHandle.slice(1)}/status/${task.id.replace(/-/g, "").slice(0, 18)}`;
     const profileUrl = `https://x.com/${executorHandle.slice(1)}`;
-    const screenshotUrl = `/brand/ai2human-social-${(task.id.charCodeAt(0) % 3) + 1}.png`;
+    const screenshotUrl = submissionFields.includes("locationNote")
+      ? ["/freelance-hero.jpg", "/freelance-desk.jpg", "/freelance-team.jpg"][
+          task.id.charCodeAt(0) % 3
+        ]
+      : `/brand/ai2human-social-${(task.id.charCodeAt(0) % 3) + 1}.png`;
+    const locationNote = [
+      "Front entrance verified on Market Street",
+      "Product shelf checked near refrigerated aisle",
+      "Pickup desk verified in the lobby",
+      "Menu board checked at the main counter",
+      "Queue observed at the south entrance"
+    ][task.id.charCodeAt(1) % 5];
+    const timestampNote = `Checked at ${new Date().toLocaleString("en-US", { hour12: false })}`;
     const summary =
-      task.campaign?.action === "repost"
+      task.campaign?.platform === "real_world"
+        ? `Completed the ${task.campaign?.label || "field"} task on site and returned the requested proof package for review.`
+        : task.campaign?.action === "repost"
         ? `Reposted the official campaign update from ${task.campaign.requesterHandle || "@official"} and kept it visible on profile.`
         : `Completed ${task.campaign?.action || "campaign"} task for ${task.campaign?.requesterHandle || "@official"} and kept the result live for review.`;
     const res = await fetch(`/api/tasks/${task.id}/evidence`, {
@@ -243,12 +265,14 @@ export default function LiveDemoPage() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         by: "human",
-        executorHandle,
-        postUrl: task.campaign?.action === "repost" ? "" : postUrl,
-        profileUrl: task.campaign?.action === "repost" ? profileUrl : "",
-        proofPhrase: task.campaign?.proofPhrase || "",
+        executorHandle: submissionFields.includes("executorHandle") ? executorHandle : undefined,
+        postUrl: submissionFields.includes("postUrl") ? postUrl : "",
+        profileUrl: submissionFields.includes("profileUrl") ? profileUrl : "",
+        proofPhrase: submissionFields.includes("proofPhrase") ? task.campaign?.proofPhrase || "" : "",
+        locationNote: submissionFields.includes("locationNote") ? locationNote : "",
+        timestampNote: submissionFields.includes("timestampNote") ? timestampNote : "",
         summary,
-        screenshotUrl
+        screenshotUrl: submissionFields.includes("photo") ? screenshotUrl : ""
       })
     });
     if (!res.ok) {
@@ -440,16 +464,16 @@ export default function LiveDemoPage() {
         </div>
         <div className="market-kpis">
           <div>
-            <span>Total tasks</span>
-            <strong>{stats.total}</strong>
+            <span>Loop stages</span>
+            <strong>5</strong>
           </div>
           <div>
-            <span>In progress</span>
-            <strong>{stats.running}</strong>
-          </div>
-          <div>
-            <span>Paid</span>
+            <span>Paid tasks</span>
             <strong>{stats.paid}</strong>
+          </div>
+          <div>
+            <span>Settlement gate</span>
+            <strong>Verify first</strong>
           </div>
         </div>
       </header>
@@ -531,8 +555,10 @@ export default function LiveDemoPage() {
         <div className="market-card feed">
           <div id="market" className="block-header">
             <div>
-              <h2>Execution market</h2>
-              <p className="mvp-muted">Fallback tasks queued for a proof-first X Layer settlement flow.</p>
+              <h2>Fallback execution queue</h2>
+              <p className="mvp-muted">
+                Blocked agent tasks move through proof collection, verification, and X Layer settlement.
+              </p>
             </div>
           </div>
 
@@ -552,7 +578,7 @@ export default function LiveDemoPage() {
                     <div>
                       <h3>{task.title}</h3>
                       <p>
-                        {task.budget} · {task.deadline}
+                        {formatBudgetLabel(task.budget)} · {task.deadline}
                       </p>
                     </div>
                     <span className={`status-pill status-${task.status}`}>
@@ -650,7 +676,14 @@ export default function LiveDemoPage() {
                       : ""}
                   </span>
                 )}
-                {selectedTask.campaign?.targetUrl && <span>Target: {selectedTask.campaign.targetUrl}</span>}
+                {selectedTask.campaign?.targetUrl && (
+                  <span>
+                    {selectedTask.campaign.platform === "x"
+                      ? "Target"
+                      : selectedTask.campaign.targetLabel || "Reference"}
+                    : {selectedTask.campaign.targetUrl}
+                  </span>
+                )}
                 {selectedTask.assignee && (
                   <span>
                     Executor: {selectedTask.assignee.name} ({selectedTask.assignee.type})

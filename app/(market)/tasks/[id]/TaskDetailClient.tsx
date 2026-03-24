@@ -6,8 +6,13 @@ import { useRouter } from "next/navigation";
 import { usePrivy } from "@privy-io/react-auth";
 import {
   getTaskEvidenceFields,
+  getTaskSubmissionFields,
   getTaskVerificationStatus
 } from "../../../lib/officialCampaignTasks.js";
+import {
+  DEFAULT_SETTLEMENT_TOKEN_SYMBOL,
+  formatBudgetLabel
+} from "../../../lib/assetLabels.js";
 import styles from "./detail.module.css";
 
 type EvidenceItem = {
@@ -37,11 +42,16 @@ type Task = {
   campaign?: {
     requesterName: string;
     requesterHandle?: string;
-    action: "post" | "quote" | "reply" | "repost";
+    platform: "x" | "real_world";
+    action: string;
+    label?: string;
     targetUrl?: string;
+    targetLabel?: string;
     proofPhrase?: string;
     brief?: string;
     proofRequirements: string[];
+    verificationChecks?: string[];
+    submissionFields?: string[];
   };
   assignee?: {
     type: "ai" | "human";
@@ -92,7 +102,9 @@ const statusLabels: Record<Task["status"], string> = {
 
 function actionLabel(task: Task) {
   if (!task.campaign) return "fallback";
-  return `x ${task.campaign.action}`;
+  if (task.campaign.label) return task.campaign.label;
+  if (task.campaign.platform === "x") return `x ${task.campaign.action}`;
+  return task.campaign.action.replace(/_/g, " ");
 }
 
 function canClaim(task: Task, auth: AuthPayload | null) {
@@ -120,6 +132,8 @@ export default function TaskDetailClient({ initialTask }: { initialTask: Task })
   const [postUrl, setPostUrl] = useState("");
   const [profileUrl, setProfileUrl] = useState("");
   const [screenshotUrl, setScreenshotUrl] = useState("");
+  const [locationNote, setLocationNote] = useState("");
+  const [timestampNote, setTimestampNote] = useState("");
   const [proofPhrase, setProofPhrase] = useState(initialTask.campaign?.proofPhrase || "");
   const [summary, setSummary] = useState("");
 
@@ -174,13 +188,33 @@ export default function TaskDetailClient({ initialTask }: { initialTask: Task })
   const claimedByMe = useMemo(() => isClaimedByCurrentUser(task, auth), [task, auth]);
   const claimable = useMemo(() => canClaim(task, auth), [task, auth]);
   const verificationStatus = useMemo(() => getTaskVerificationStatus(task), [task]);
-  const requiresProfileUrl = task.campaign?.action === "repost";
-  const requiresPostUrl = task.campaign?.action !== "repost";
+  const submissionFields = useMemo(() => getTaskSubmissionFields(task), [task]);
+  const rewardLabel = useMemo(() => formatBudgetLabel(task.budget), [task.budget]);
+  const requiresExecutorHandle = submissionFields.includes("executorHandle");
+  const requiresPostUrl = submissionFields.includes("postUrl");
+  const requiresProfileUrl = submissionFields.includes("profileUrl");
+  const requiresPhoto = submissionFields.includes("photo");
+  const requiresLocationNote = submissionFields.includes("locationNote");
+  const requiresTimestampNote = submissionFields.includes("timestampNote");
+  const requiresProofPhrase = submissionFields.includes("proofPhrase");
+  const targetLabel = task.campaign?.platform === "x"
+    ? "Official link"
+    : task.campaign?.targetLabel || "Reference";
+  const proofPhraseLabel = task.campaign?.platform === "x"
+    ? "Required Phrase"
+    : "Verification Code / Phrase";
+  const photoLabel = task.campaign?.platform === "x" ? "Screenshot Image URL" : "Proof Photo URL";
+  const photoPlaceholder = task.campaign?.platform === "x"
+    ? "https://image-host.example/proof.png"
+    : "https://... or /path/to/photo";
+  const summaryPlaceholder = task.campaign?.platform === "x"
+    ? "One-line summary of what you published and where."
+    : "One-line summary of what you checked, picked up, or verified on site.";
   const canEditProof =
     claimedByMe && (task.status === "human_assigned" || task.status === "human_done");
 
   useEffect(() => {
-    const values = evidenceFields.values || {};
+    const values = (evidenceFields.values || {}) as Record<string, string>;
     const firstScreenshot = evidenceFields.screenshots?.[evidenceFields.screenshots.length - 1] || "";
 
     if (values.executor_handle) {
@@ -191,6 +225,12 @@ export default function TaskDetailClient({ initialTask }: { initialTask: Task })
     }
     if (values.profile_url) {
       setProfileUrl(values.profile_url);
+    }
+    if (values.location_note) {
+      setLocationNote(values.location_note);
+    }
+    if (values.timestamp_note) {
+      setTimestampNote(values.timestamp_note);
     }
     if (values.proof_phrase) {
       setProofPhrase(values.proof_phrase);
@@ -253,11 +293,13 @@ export default function TaskDetailClient({ initialTask }: { initialTask: Task })
         credentials: "same-origin",
         body: JSON.stringify({
           by: "human",
-          executorHandle,
+          executorHandle: requiresExecutorHandle ? executorHandle : undefined,
           postUrl: requiresPostUrl ? postUrl : undefined,
           profileUrl: requiresProfileUrl ? profileUrl : profileUrl || undefined,
-          screenshotUrl,
-          proofPhrase,
+          screenshotUrl: requiresPhoto ? screenshotUrl : undefined,
+          locationNote: requiresLocationNote ? locationNote : undefined,
+          timestampNote: requiresTimestampNote ? timestampNote : undefined,
+          proofPhrase: requiresProofPhrase ? proofPhrase : undefined,
           summary
         })
       });
@@ -276,7 +318,9 @@ export default function TaskDetailClient({ initialTask }: { initialTask: Task })
       }
       if (payload.payment) {
         setMessage(
-          `Proof verified and ${payload.payment.amount} ${payload.payment.tokenSymbol || "USDT"} sent to ${
+          `Proof verified and ${payload.payment.amount} ${
+            payload.payment.tokenSymbol || DEFAULT_SETTLEMENT_TOKEN_SYMBOL
+          } sent to ${
             payload.payment.receiverAddress || payload.payment.receiver || "the executor"
           }.`
         );
@@ -319,7 +363,7 @@ export default function TaskDetailClient({ initialTask }: { initialTask: Task })
         <div className={styles.metaGrid}>
           <div className={styles.metaCard}>
             <span>Reward</span>
-            <strong>{task.budget}</strong>
+            <strong>{rewardLabel}</strong>
           </div>
           <div className={styles.metaCard}>
             <span>Deadline</span>
@@ -347,13 +391,13 @@ export default function TaskDetailClient({ initialTask }: { initialTask: Task })
               <p>{task.acceptance}</p>
               {task.campaign?.targetUrl ? (
                 <p>
-                  Official link:{" "}
+                  {targetLabel}:{" "}
                   <a href={task.campaign.targetUrl} target="_blank" rel="noreferrer">
                     {task.campaign.targetUrl}
                   </a>
                 </p>
               ) : null}
-              {task.campaign?.proofPhrase ? <p>Required phrase: {task.campaign.proofPhrase}</p> : null}
+              {task.campaign?.proofPhrase ? <p>{proofPhraseLabel}: {task.campaign.proofPhrase}</p> : null}
             </div>
           </article>
 
@@ -471,16 +515,18 @@ export default function TaskDetailClient({ initialTask }: { initialTask: Task })
                       : "Proof is already submitted, but the automated check is failing. Update the fields below and resubmit."}
                   </div>
                 ) : null}
-                <div className={styles.field}>
-                  <label htmlFor="executorHandle">X Handle</label>
-                  <input
-                    id="executorHandle"
-                    className={styles.input}
-                    value={executorHandle}
-                    onChange={(event) => setExecutorHandle(event.target.value)}
-                    placeholder="@yourhandle"
-                  />
-                </div>
+                {requiresExecutorHandle ? (
+                  <div className={styles.field}>
+                    <label htmlFor="executorHandle">X Handle</label>
+                    <input
+                      id="executorHandle"
+                      className={styles.input}
+                      value={executorHandle}
+                      onChange={(event) => setExecutorHandle(event.target.value)}
+                      placeholder="@yourhandle"
+                    />
+                  </div>
+                ) : null}
 
                 <div className={styles.row2}>
                   {requiresPostUrl ? (
@@ -496,32 +542,62 @@ export default function TaskDetailClient({ initialTask }: { initialTask: Task })
                     </div>
                   ) : null}
 
+                  {requiresProfileUrl ? (
+                    <div className={styles.field}>
+                      <label htmlFor="profileUrl">Profile URL</label>
+                      <input
+                        id="profileUrl"
+                        className={styles.input}
+                        value={profileUrl}
+                        onChange={(event) => setProfileUrl(event.target.value)}
+                        placeholder="https://x.com/yourhandle"
+                      />
+                    </div>
+                  ) : null}
+                </div>
+
+                {requiresPhoto ? (
                   <div className={styles.field}>
-                    <label htmlFor="profileUrl">{requiresProfileUrl ? "Profile URL" : "Optional Profile URL"}</label>
+                    <label htmlFor="screenshotUrl">{photoLabel}</label>
                     <input
-                      id="profileUrl"
+                      id="screenshotUrl"
                       className={styles.input}
-                      value={profileUrl}
-                      onChange={(event) => setProfileUrl(event.target.value)}
-                      placeholder="https://x.com/yourhandle"
+                      value={screenshotUrl}
+                      onChange={(event) => setScreenshotUrl(event.target.value)}
+                      placeholder={photoPlaceholder}
                     />
                   </div>
-                </div>
+                ) : null}
 
-                <div className={styles.field}>
-                  <label htmlFor="screenshotUrl">Screenshot URL</label>
-                  <input
-                    id="screenshotUrl"
-                    className={styles.input}
-                    value={screenshotUrl}
-                    onChange={(event) => setScreenshotUrl(event.target.value)}
-                    placeholder="https://..."
-                  />
-                </div>
-
-                {task.campaign?.proofPhrase ? (
+                {requiresLocationNote ? (
                   <div className={styles.field}>
-                    <label htmlFor="proofPhrase">Required Phrase</label>
+                    <label htmlFor="locationNote">Location Note</label>
+                    <input
+                      id="locationNote"
+                      className={styles.input}
+                      value={locationNote}
+                      onChange={(event) => setLocationNote(event.target.value)}
+                      placeholder="Store name, entrance, desk, or pickup point"
+                    />
+                  </div>
+                ) : null}
+
+                {requiresTimestampNote ? (
+                  <div className={styles.field}>
+                    <label htmlFor="timestampNote">Timestamp Note</label>
+                    <input
+                      id="timestampNote"
+                      className={styles.input}
+                      value={timestampNote}
+                      onChange={(event) => setTimestampNote(event.target.value)}
+                      placeholder="Checked at 2026-03-23 19:40 local time"
+                    />
+                  </div>
+                ) : null}
+
+                {requiresProofPhrase ? (
+                  <div className={styles.field}>
+                    <label htmlFor="proofPhrase">{proofPhraseLabel}</label>
                     <input
                       id="proofPhrase"
                       className={styles.input}
@@ -538,7 +614,7 @@ export default function TaskDetailClient({ initialTask }: { initialTask: Task })
                     className={styles.textarea}
                     value={summary}
                     onChange={(event) => setSummary(event.target.value)}
-                    placeholder="One-line summary of what you published and where."
+                    placeholder={summaryPlaceholder}
                   />
                 </div>
 

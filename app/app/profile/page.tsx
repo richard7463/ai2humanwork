@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { usePrivy, useWallets } from "@privy-io/react-auth";
 import styles from "./profile.module.css";
 import authStyles from "./auth.module.css";
+import { DEFAULT_SETTLEMENT_TOKEN_SYMBOL } from "../../lib/assetLabels.js";
 
 type SessionUser = {
   id: string;
@@ -309,7 +310,7 @@ export default function ProfilePage() {
             </div>
 
             <label className={styles.label}>
-              Hourly rate (USDT)
+              {`Hourly rate (${DEFAULT_SETTLEMENT_TOKEN_SYMBOL})`}
               <input
                 className={styles.input}
                 type="number"

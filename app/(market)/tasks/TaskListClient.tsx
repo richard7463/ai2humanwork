@@ -5,6 +5,10 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { usePrivy } from "@privy-io/react-auth";
 import styles from "../market.module.css";
+import {
+  DEFAULT_SETTLEMENT_TOKEN_SYMBOL,
+  formatBudgetLabel
+} from "../../lib/assetLabels.js";
 
 type Task = {
   id: string;
@@ -25,11 +29,15 @@ type Task = {
   campaign?: {
     requesterName: string;
     requesterHandle?: string;
-    action: "post" | "quote" | "reply" | "repost";
+    platform: "x" | "real_world";
+    action: string;
+    label?: string;
     targetUrl?: string;
+    targetLabel?: string;
     proofPhrase?: string;
     brief?: string;
     proofRequirements: string[];
+    submissionFields?: string[];
   };
   assignee?: {
     type: "ai" | "human";
@@ -68,7 +76,9 @@ function parseReward(value: string) {
 
 function actionLabel(task: Task) {
   if (!task.campaign) return "fallback";
-  return `x ${task.campaign.action}`;
+  if (task.campaign.label) return task.campaign.label;
+  if (task.campaign.platform === "x") return `x ${task.campaign.action}`;
+  return task.campaign.action.replace(/_/g, " ");
 }
 
 function statusClass(status: Task["status"]) {
@@ -186,8 +196,8 @@ export default function TaskListClient({ justCreated }: { justCreated: boolean }
       <header className={styles.pageHeader}>
         <h1>Tasks</h1>
         <p className={styles.pageLead}>
-          Live official campaign tasks. Connect a wallet, claim a task, then submit proof for
-          reviewer approval and X Layer settlement.
+          Live fallback tasks across social distribution and real-world execution. Connect a
+          wallet, claim a task, then submit proof for reviewer approval and X Layer settlement.
         </p>
       </header>
 
@@ -206,7 +216,7 @@ export default function TaskListClient({ justCreated }: { justCreated: boolean }
           </select>
         </div>
         <div className={styles.field}>
-          <label>Min Reward (USDT)</label>
+          <label>{`Min Reward (${DEFAULT_SETTLEMENT_TOKEN_SYMBOL})`}</label>
           <input className={styles.input} value={minReward} onChange={(event) => setMinReward(event.target.value)} />
         </div>
         <div className={styles.field}>
@@ -279,7 +289,7 @@ export default function TaskListClient({ justCreated }: { justCreated: boolean }
 
               <div className={styles.taskFooter}>
                 <div>
-                  <p className={styles.reward}>{task.budget}</p>
+                  <p className={styles.reward}>{formatBudgetLabel(task.budget)}</p>
                   <div className={styles.metaLine}>Updated {new Date(task.updatedAt).toLocaleString()}</div>
                   <div className={styles.requester}>
                     {task.assignee?.type === "human"

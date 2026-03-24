@@ -3,6 +3,10 @@
 import { useEffect, useMemo, useState } from "react";
 import { getTaskVerificationStatus } from "../lib/officialCampaignTasks.js";
 import { getTaskAgentArchitecture } from "../lib/agentArchitecture.js";
+import {
+  DEFAULT_SETTLEMENT_TOKEN_SYMBOL,
+  formatBudgetLabel
+} from "../lib/assetLabels.js";
 
 type EvidenceItem = {
   id: string;
@@ -21,13 +25,16 @@ type Task = {
   campaign?: {
     requesterName: string;
     requesterHandle?: string;
-    platform: "x";
-    action: "post" | "quote" | "reply" | "repost";
+    platform: "x" | "real_world";
+    action: string;
+    label?: string;
     targetUrl?: string;
+    targetLabel?: string;
     proofPhrase?: string;
     brief?: string;
     proofRequirements: string[];
     verificationChecks: string[];
+    submissionFields?: string[];
   };
   status:
     | "created"
@@ -365,7 +372,7 @@ export default function ReviewerPage() {
                   <div>
                     <h3>{task.title}</h3>
                     <p>
-                      {task.budget} · {task.deadline}
+                      {formatBudgetLabel(task.budget)} · {task.deadline}
                     </p>
                   </div>
                   <span className={`status-pill status-${task.status}`}>
@@ -409,7 +416,7 @@ export default function ReviewerPage() {
                 <div>
                   <h3>{selectedTask.title}</h3>
                   <p>
-                    {selectedTask.budget} · {selectedTask.deadline}
+                    {formatBudgetLabel(selectedTask.budget)} · {selectedTask.deadline}
                   </p>
                 </div>
                 <span className={`status-pill status-${selectedTask.status}`}>
@@ -468,7 +475,10 @@ export default function ReviewerPage() {
                   )}
                   {selectedTask.campaign?.targetUrl && (
                     <p className="mvp-muted">
-                      Target post:{" "}
+                      {selectedTask.campaign.platform === "x"
+                        ? "Target post"
+                        : selectedTask.campaign.targetLabel || "Reference"}
+                      :{" "}
                       <a href={selectedTask.campaign.targetUrl} target="_blank" rel="noreferrer">
                         {selectedTask.campaign.targetUrl}
                       </a>
@@ -672,7 +682,7 @@ export default function ReviewerPage() {
                 <div>
                   <strong>{payment.amount}</strong>
                   <p className="mvp-muted">
-                    {payment.receiver} · {payment.tokenSymbol || "USDC"} · {payment.method}
+                    {payment.receiver} · {payment.tokenSymbol || DEFAULT_SETTLEMENT_TOKEN_SYMBOL} · {payment.method}
                   </p>
                   {payment.payerAddress && (
                     <p className="mvp-muted">payer {payment.payerAddress}</p>

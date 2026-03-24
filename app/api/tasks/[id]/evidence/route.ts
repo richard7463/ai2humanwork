@@ -7,6 +7,7 @@ import {
   getTaskEvidenceFields,
   getTaskVerificationStatus
 } from "../../../../lib/officialCampaignTasks.js";
+import { DEFAULT_SETTLEMENT_TOKEN_SYMBOL } from "../../../../lib/assetLabels.js";
 import { executeXLayerSettlement } from "../../../../lib/xlayerSettlement";
 
 export const runtime = "nodejs";
@@ -43,6 +44,8 @@ export async function POST(
   const executorHandle = String(body.executorHandle || "").trim();
   const postUrl = String(body.postUrl || "").trim();
   const profileUrl = String(body.profileUrl || "").trim();
+  const locationNote = String(body.locationNote || "").trim();
+  const timestampNote = String(body.timestampNote || "").trim();
   const proofPhrase = String(body.proofPhrase || "").trim();
   const summary = String(body.summary || note || "").trim();
   const by = body.by === "human" ? "human" : "system";
@@ -105,6 +108,22 @@ export async function POST(
         by,
         type: "note",
         content: `proof_phrase: ${proofPhrase}`
+      });
+    }
+
+    if (locationNote) {
+      appendEvidence(task, {
+        by,
+        type: "note",
+        content: `location_note: ${locationNote}`
+      });
+    }
+
+    if (timestampNote) {
+      appendEvidence(task, {
+        by,
+        type: "note",
+        content: `timestamp_note: ${timestampNote}`
       });
     }
 
@@ -258,7 +277,7 @@ export async function POST(
         by: "system",
         type: "note",
         content: `agent_event: settlement_agent | Released ${settlement.amount} ${
-          settlement.tokenSymbol || "USDT"
+          settlement.tokenSymbol || DEFAULT_SETTLEMENT_TOKEN_SYMBOL
         } via ${settlement.method}.`
       });
       if (settlement.configurationHint && settlement.method === "mock_x402") {

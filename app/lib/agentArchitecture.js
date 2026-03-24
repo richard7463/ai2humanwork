@@ -113,7 +113,7 @@ function getFallbackMessage(task, roleId) {
       }
       return "Idle until the planner escalates.";
     case "human_operator":
-      if (task?.status === "human_assigned") return "Completing the social action and collecting proof.";
+      if (task?.status === "human_assigned") return "Completing the assigned action and collecting structured proof.";
       if (["human_done", "verified", "paid"].includes(task?.status)) {
         return "Submitted structured evidence for review.";
       }

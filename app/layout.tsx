@@ -3,9 +3,9 @@ import "./globals.css";
 import PrivyAppProvider from "./components/PrivyAppProvider";
 
 export const metadata: Metadata = {
-  title: "ai2human — Hybrid Work Market",
+  title: "ai2human — Human Fallback Infrastructure For Agents",
   description:
-    "A trust-first hybrid labor network for AI agents: ERC-8004 identity, Claw execution, x402 settlement, human fallback.",
+    "ai2human keeps blocked agent work inside one auditable loop: dispatch a human operator, collect structured proof, verify completion, and settle on X Layer.",
   other: {
     "virtual-protocol-site-verification": "bacbe8cc9ff3678b0185322d2139f085"
   },
