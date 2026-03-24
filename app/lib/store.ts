@@ -485,23 +485,53 @@ function getDbPath(): string {
 }
 
 const DB_PATH = getDbPath();
+const BUNDLED_DB_PATH = path.join(process.cwd(), "data", "db.json");
+
+function makeInitialDb(): Db {
+  return {
+    tasks: makeSeedTasks(60),
+    waitlist: [],
+    payments: [],
+    humans: seedHumans,
+    services: seedServices,
+    fallbackOrders: makeSeedFallbackOrders(12),
+    fallbackSubscriptions: [],
+    users: [],
+    sessions: []
+  };
+}
+
+function mergeById<T extends { id: string }>(primary: T[], fallback: T[]): T[] {
+  if (!primary.length) return [...fallback];
+  if (!fallback.length) return [...primary];
+
+  const merged = [...primary];
+  const seen = new Set(primary.map((item) => item.id));
+
+  for (const item of fallback) {
+    if (seen.has(item.id)) continue;
+    seen.add(item.id);
+    merged.push(item);
+  }
+
+  return merged;
+}
+
+async function readBundledDb(): Promise<Db | null> {
+  try {
+    const raw = await fs.readFile(BUNDLED_DB_PATH, "utf-8");
+    return JSON.parse(raw) as Db;
+  } catch {
+    return null;
+  }
+}
 
 async function ensureDb(): Promise<void> {
   try {
     await fs.access(DB_PATH);
   } catch {
     await fs.mkdir(path.dirname(DB_PATH), { recursive: true });
-    const initial: Db = {
-      tasks: makeSeedTasks(60),
-      waitlist: [],
-      payments: [],
-      humans: seedHumans,
-      services: seedServices,
-      fallbackOrders: makeSeedFallbackOrders(12),
-      fallbackSubscriptions: [],
-      users: [],
-      sessions: []
-    };
+    const initial = (await readBundledDb()) ?? makeInitialDb();
     await fs.writeFile(DB_PATH, JSON.stringify(initial, null, 2), "utf-8");
   }
 }
@@ -510,10 +540,12 @@ export async function readDb(): Promise<Db> {
   await ensureDb();
   const raw = await fs.readFile(DB_PATH, "utf-8");
   const parsed = JSON.parse(raw) as Db;
+  const bundled = await readBundledDb();
 
-  const tasks = Array.isArray(parsed.tasks) && parsed.tasks.length > 0
-    ? parsed.tasks
-    : makeSeedTasks(60);
+  const tasks = mergeById(
+    Array.isArray(parsed.tasks) ? parsed.tasks : [],
+    Array.isArray(bundled?.tasks) ? bundled.tasks : []
+  );
   const humans = Array.isArray(parsed.humans) && parsed.humans.length > 0
     ? parsed.humans
     : seedHumans.map((human) => ({ ...human }));
@@ -521,17 +553,22 @@ export async function readDb(): Promise<Db> {
     ? parsed.services
     : seedServices.map((service) => ({ ...service }));
   const fallbackOrders =
-    Array.isArray(parsed.fallbackOrders) && parsed.fallbackOrders.length > 0
-      ? parsed.fallbackOrders
-      : makeSeedFallbackOrders(12);
+    mergeById(
+      Array.isArray(parsed.fallbackOrders) ? parsed.fallbackOrders : [],
+      Array.isArray(bundled?.fallbackOrders) ? bundled.fallbackOrders : []
+    );
+  const payments = mergeById(
+    Array.isArray(parsed.payments) ? parsed.payments : [],
+    Array.isArray(bundled?.payments) ? bundled.payments : []
+  );
 
   return {
-    tasks,
+    tasks: tasks.length > 0 ? tasks : makeSeedTasks(60),
     waitlist: parsed.waitlist ?? [],
-    payments: parsed.payments ?? [],
+    payments,
     humans,
     services,
-    fallbackOrders,
+    fallbackOrders: fallbackOrders.length > 0 ? fallbackOrders : makeSeedFallbackOrders(12),
     fallbackSubscriptions: parsed.fallbackSubscriptions ?? [],
     users: parsed.users ?? [],
     sessions: parsed.sessions ?? []

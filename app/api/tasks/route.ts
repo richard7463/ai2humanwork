@@ -2,12 +2,13 @@ import { NextResponse } from "next/server";
 import { readDb, updateDb, type Task } from "../../lib/store";
 import { appendEvidence } from "../../lib/taskEvidence";
 import { buildOfficialCampaignTask } from "../../lib/officialCampaignTasks.js";
+import { sortTasksForBoard } from "../../lib/taskBoard.js";
 
 export const runtime = "nodejs";
 
 export async function GET() {
   const db = await readDb();
-  return NextResponse.json(db.tasks);
+  return NextResponse.json(sortTasksForBoard(db.tasks));
 }
 
 export async function POST(request: Request) {

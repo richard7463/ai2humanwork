@@ -9,6 +9,7 @@ import {
   DEFAULT_SETTLEMENT_TOKEN_SYMBOL,
   formatBudgetLabel
 } from "../../lib/assetLabels.js";
+import { sortTasksForBoard } from "../../lib/taskBoard.js";
 
 type Task = {
   id: string;
@@ -105,7 +106,7 @@ export default function TaskListClient({ justCreated }: { justCreated: boolean }
   const [tasks, setTasks] = useState<Task[]>([]);
   const [auth, setAuth] = useState<AuthPayload | null>(null);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState("available");
+  const [filter, setFilter] = useState("all");
   const [minReward, setMinReward] = useState("0");
   const [claimingId, setClaimingId] = useState("");
   const [error, setError] = useState("");
@@ -114,8 +115,7 @@ export default function TaskListClient({ justCreated }: { justCreated: boolean }
   async function loadTasks() {
     const response = await fetch("/api/tasks", { cache: "no-store", credentials: "same-origin" });
     const payload = (await response.json().catch(() => [])) as Task[];
-    payload.sort((a, b) => +new Date(b.updatedAt) - +new Date(a.updatedAt));
-    setTasks(payload);
+    setTasks(sortTasksForBoard(payload));
   }
 
   async function loadAuth() {
