@@ -3,7 +3,7 @@ export const SUBMISSION_PROJECT = {
   tagline: "Human fallback infrastructure for agents on X Layer",
   oneLiner:
     "When agents hit reality, ai2human dispatches a human operator, collects structured proof, verifies completion, and settles on X Layer.",
-  githubUrl: "https://github.com/richard7463/OmniClaw",
+  githubUrl: "https://github.com/richard7463/ai2humanwork",
   demoPath: "/livedemo",
   reviewerPath: "/reviewer",
   tasksPath: "/tasks",
