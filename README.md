@@ -2,11 +2,20 @@
 
 `ai2human` is human fallback infrastructure for agents on X Layer.
 
+![ai2human hero](public/brand/ai2human-social-hero.png)
+
 When an agent gets blocked by a storefront check, signature, pickup, or in-person confirmation, ai2human dispatches a human operator, collects structured proof, verifies completion, and settles on X Layer.
 
 Core loop:
 
 `task -> human execution -> proof -> verify -> settle`
+
+Quick links:
+
+- Submission proof: `/submission`
+- Live demo: `/livedemo`
+- Reviewer console: `/reviewer`
+- Public repo: [github.com/richard7463/ai2humanwork](https://github.com/richard7463/ai2humanwork)
 
 ## Why This Project Exists
 
