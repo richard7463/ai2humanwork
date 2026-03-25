@@ -74,11 +74,18 @@ type AuthPayload = {
 };
 
 type PaymentResult = {
+  id?: string;
   amount: string;
   receiver?: string;
   receiverAddress?: string;
+  payerAddress?: string;
   method?: string;
+  network?: string;
+  chainId?: number;
   tokenSymbol?: string;
+  tokenAddress?: string;
+  source?: string;
+  createdAt?: string;
   txHash?: string;
   explorerUrl?: string;
 };
@@ -118,10 +125,22 @@ function isClaimedByCurrentUser(task: Task, auth: AuthPayload | null) {
   return task.assignee?.type === "human" && task.assignee.name === auth.human.name;
 }
 
-export default function TaskDetailClient({ initialTask }: { initialTask: Task }) {
+function shortValue(value: string, start = 8, end = 6) {
+  if (value.length <= start + end + 3) return value;
+  return `${value.slice(0, start)}...${value.slice(-end)}`;
+}
+
+export default function TaskDetailClient({
+  initialTask,
+  initialPayment
+}: {
+  initialTask: Task;
+  initialPayment: PaymentResult | null;
+}) {
   const router = useRouter();
   const { ready, authenticated, login } = usePrivy();
   const [task, setTask] = useState(initialTask);
+  const [latestPayment, setLatestPayment] = useState<PaymentResult | null>(initialPayment);
   const [auth, setAuth] = useState<AuthPayload | null>(null);
   const [loading, setLoading] = useState(false);
   const [claiming, setClaiming] = useState(false);
@@ -144,13 +163,21 @@ export default function TaskDetailClient({ initialTask }: { initialTask: Task })
         cache: "no-store",
         credentials: "same-origin"
       });
-      const payload = (await response.json().catch(() => ({}))) as Task & { error?: string };
+      const payload = (await response.json().catch(() => ({}))) as {
+        error?: string;
+        task?: Task;
+        payment?: PaymentResult | null;
+      };
       if (!response.ok) {
         throw new Error(payload.error || "Unable to load task.");
       }
-      setTask(payload);
-      if (payload.campaign?.proofPhrase) {
-        setProofPhrase((current) => current || payload.campaign?.proofPhrase || "");
+      if (!payload.task) {
+        throw new Error("Task payload missing.");
+      }
+      setTask(payload.task);
+      setLatestPayment(payload.payment || null);
+      if (payload.task.campaign?.proofPhrase) {
+        setProofPhrase((current) => current || payload.task?.campaign?.proofPhrase || "");
       }
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : "Unable to load task.");
@@ -317,6 +344,7 @@ export default function TaskDetailClient({ initialTask }: { initialTask: Task })
         throw new Error(payload.error || "Unable to submit proof.");
       }
       if (payload.payment) {
+        setLatestPayment(payload.payment);
         setMessage(
           `Proof verified and ${payload.payment.amount} ${
             payload.payment.tokenSymbol || DEFAULT_SETTLEMENT_TOKEN_SYMBOL
@@ -450,6 +478,72 @@ export default function TaskDetailClient({ initialTask }: { initialTask: Task })
         </div>
 
         <aside className={styles.stack}>
+          {latestPayment ? (
+            <article className={styles.card}>
+              <h2>Settlement proof</h2>
+              <div className={styles.settlementGrid}>
+                <div className={styles.settlementItem}>
+                  <span>Amount</span>
+                  <strong>{latestPayment.amount}</strong>
+                </div>
+                <div className={styles.settlementItem}>
+                  <span>Token</span>
+                  <strong>{latestPayment.tokenSymbol || DEFAULT_SETTLEMENT_TOKEN_SYMBOL}</strong>
+                </div>
+                <div className={styles.settlementItem}>
+                  <span>Method</span>
+                  <strong>{latestPayment.method || "unknown"}</strong>
+                </div>
+                <div className={styles.settlementItem}>
+                  <span>Network</span>
+                  <strong>{latestPayment.network || "demo"}</strong>
+                </div>
+              </div>
+
+              <div className={styles.settlementStack}>
+                {latestPayment.payerAddress ? (
+                  <div className={styles.settlementRow}>
+                    <span>Payer</span>
+                    <strong title={latestPayment.payerAddress}>
+                      {shortValue(latestPayment.payerAddress)}
+                    </strong>
+                  </div>
+                ) : null}
+                {(latestPayment.receiverAddress || latestPayment.receiver) ? (
+                  <div className={styles.settlementRow}>
+                    <span>Receiver</span>
+                    <strong
+                      title={latestPayment.receiverAddress || latestPayment.receiver}
+                    >
+                      {latestPayment.receiverAddress
+                        ? shortValue(latestPayment.receiverAddress)
+                        : latestPayment.receiver}
+                    </strong>
+                  </div>
+                ) : null}
+                {latestPayment.txHash ? (
+                  <div className={styles.settlementRow}>
+                    <span>Transaction hash</span>
+                    <strong className={styles.hashValue} title={latestPayment.txHash}>
+                      {latestPayment.txHash}
+                    </strong>
+                  </div>
+                ) : null}
+                {latestPayment.explorerUrl ? (
+                  <div className={styles.settlementActions}>
+                    <a href={latestPayment.explorerUrl} target="_blank" rel="noreferrer">
+                      View on explorer
+                    </a>
+                  </div>
+                ) : (
+                  <div className={styles.notice}>
+                    This settlement was recorded without an onchain explorer link.
+                  </div>
+                )}
+              </div>
+            </article>
+          ) : null}
+
           <article className={styles.card}>
             <h2>Take task</h2>
             {!authenticated ? (

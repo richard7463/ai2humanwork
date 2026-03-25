@@ -93,6 +93,7 @@ export async function POST(
         amount: settlement.amount,
         receiver: order.humanName || "Human Operator",
         receiverAddress: settlement.receiverAddress,
+        payerAddress: settlement.payerAddress,
         method: settlement.method,
         status: settlement.status,
         source: "fallback_order",

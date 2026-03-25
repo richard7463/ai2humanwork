@@ -294,6 +294,7 @@ export async function POST(
         amount: settlement.amount,
         receiver: task.assignee?.name || "Executor",
         receiverAddress: settlement.receiverAddress,
+        payerAddress: settlement.payerAddress,
         method: settlement.method,
         status: settlement.status,
         source: "task",

@@ -16,6 +16,7 @@ export type SettlementNetwork = "xlayer-mainnet" | "xlayer-testnet" | "xlayer-cu
 export type SettlementReceipt = {
   amount: string;
   receiverAddress?: string;
+  payerAddress?: string;
   method: SettlementMethod;
   status: "paid";
   network?: SettlementNetwork;
@@ -205,6 +206,7 @@ export async function executeXLayerSettlement(input: {
   return {
     amount: normalizedAmount,
     receiverAddress,
+    payerAddress: account.address,
     method: "xlayer_erc20",
     status: "paid",
     network: config.network,

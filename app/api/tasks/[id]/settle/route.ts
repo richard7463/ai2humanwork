@@ -80,6 +80,7 @@ export async function POST(
         amount: settlement.amount,
         receiver,
         receiverAddress: settlement.receiverAddress,
+        payerAddress: settlement.payerAddress,
         method: settlement.method,
         status: settlement.status,
         source: "task" as const,
