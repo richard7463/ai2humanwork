@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { usePrivy } from "@privy-io/react-auth";
+import { usePrivy, useWallets } from "@privy-io/react-auth";
 import {
   getTaskEvidenceFields,
   getTaskSubmissionFields,
@@ -13,6 +13,10 @@ import {
   DEFAULT_SETTLEMENT_TOKEN_SYMBOL,
   formatBudgetLabel
 } from "../../../lib/assetLabels.js";
+import {
+  fetchWithPrivySessionRetry,
+  loadAuthWithPrivySession
+} from "../../../lib/clientPrivySession";
 import styles from "./detail.module.css";
 
 type EvidenceItem = {
@@ -146,7 +150,8 @@ export default function TaskDetailClient({
   initialAlternateClaimTask: AlternateClaimTask | null;
 }) {
   const router = useRouter();
-  const { ready, authenticated, login } = usePrivy();
+  const { ready, authenticated, login, getAccessToken, user } = usePrivy();
+  const { wallets } = useWallets();
   const [task, setTask] = useState(initialTask);
   const [latestPayment, setLatestPayment] = useState<PaymentResult | null>(initialPayment);
   const [alternateClaimTask, setAlternateClaimTask] = useState<AlternateClaimTask | null>(
@@ -166,6 +171,11 @@ export default function TaskDetailClient({
   const [timestampNote, setTimestampNote] = useState("");
   const [proofPhrase, setProofPhrase] = useState(initialTask.campaign?.proofPhrase || "");
   const [summary, setSummary] = useState("");
+  const connectedWallet =
+    wallets.find((wallet) => wallet.walletClientType === "privy" && wallet.address)?.address ||
+    user?.wallet?.address ||
+    wallets.find((wallet) => wallet.address)?.address ||
+    undefined;
 
   async function loadTask() {
     setLoading(true);
@@ -200,15 +210,15 @@ export default function TaskDetailClient({
   }
 
   async function loadAuth() {
-    const response = await fetch("/api/auth/me", {
-      cache: "no-store",
-      credentials: "same-origin"
+    const payload = await loadAuthWithPrivySession<AuthPayload>({
+      authenticated,
+      getAccessToken,
+      walletAddress: connectedWallet
     });
-    if (!response.ok) {
+    if (!payload) {
       setAuth(null);
       return;
     }
-    const payload = (await response.json()) as AuthPayload;
     setAuth(payload);
     if (payload.human?.handle) {
       setExecutorHandle((current) => current || `@${payload.human?.handle}`);
@@ -222,7 +232,7 @@ export default function TaskDetailClient({
   useEffect(() => {
     if (!ready || !authenticated) return;
     loadAuth();
-  }, [ready, authenticated]);
+  }, [ready, authenticated, getAccessToken, connectedWallet]);
 
   const evidenceFields = useMemo(() => getTaskEvidenceFields(task), [task]);
   const claimedByMe = useMemo(() => isClaimedByCurrentUser(task, auth), [task, auth]);
@@ -300,16 +310,24 @@ export default function TaskDetailClient({
 
     setClaiming(true);
     try {
-      const response = await fetch(`/api/tasks/${task.id}/claim`, {
-        method: "POST",
-        credentials: "same-origin"
-      });
+      const response = await fetchWithPrivySessionRetry(
+        `/api/tasks/${task.id}/claim`,
+        {
+          method: "POST",
+          credentials: "same-origin"
+        },
+        {
+          authenticated,
+          getAccessToken,
+          walletAddress: connectedWallet
+        }
+      );
       const payload = (await response.json().catch(() => ({}))) as { error?: string };
       if (!response.ok) {
         throw new Error(payload.error || "Unable to claim task.");
       }
       setMessage(`Claimed "${task.title}" as ${auth.human.name}.`);
-      await loadTask();
+      await Promise.all([loadTask(), loadAuth()]);
     } catch (claimError) {
       setError(claimError instanceof Error ? claimError.message : "Unable to claim task.");
     } finally {
@@ -328,22 +346,30 @@ export default function TaskDetailClient({
 
     setSubmitting(true);
     try {
-      const response = await fetch(`/api/tasks/${task.id}/evidence`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "same-origin",
-        body: JSON.stringify({
-          by: "human",
-          executorHandle: requiresExecutorHandle ? executorHandle : undefined,
-          postUrl: requiresPostUrl ? postUrl : undefined,
-          profileUrl: requiresProfileUrl ? profileUrl : profileUrl || undefined,
-          screenshotUrl: requiresPhoto ? screenshotUrl : undefined,
-          locationNote: requiresLocationNote ? locationNote : undefined,
-          timestampNote: requiresTimestampNote ? timestampNote : undefined,
-          proofPhrase: requiresProofPhrase ? proofPhrase : undefined,
-          summary
-        })
-      });
+      const response = await fetchWithPrivySessionRetry(
+        `/api/tasks/${task.id}/evidence`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "same-origin",
+          body: JSON.stringify({
+            by: "human",
+            executorHandle: requiresExecutorHandle ? executorHandle : undefined,
+            postUrl: requiresPostUrl ? postUrl : undefined,
+            profileUrl: requiresProfileUrl ? profileUrl : profileUrl || undefined,
+            screenshotUrl: requiresPhoto ? screenshotUrl : undefined,
+            locationNote: requiresLocationNote ? locationNote : undefined,
+            timestampNote: requiresTimestampNote ? timestampNote : undefined,
+            proofPhrase: requiresProofPhrase ? proofPhrase : undefined,
+            summary
+          })
+        },
+        {
+          authenticated,
+          getAccessToken,
+          walletAddress: connectedWallet
+        }
+      );
       const payload = (await response.json().catch(() => ({}))) as {
         error?: string;
         task?: Task;

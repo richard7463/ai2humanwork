@@ -3,12 +3,16 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { usePrivy } from "@privy-io/react-auth";
+import { usePrivy, useWallets } from "@privy-io/react-auth";
 import styles from "../market.module.css";
 import {
   DEFAULT_SETTLEMENT_TOKEN_SYMBOL,
   formatBudgetLabel
 } from "../../lib/assetLabels.js";
+import {
+  fetchWithPrivySessionRetry,
+  loadAuthWithPrivySession
+} from "../../lib/clientPrivySession";
 import { sortTasksForBoard } from "../../lib/taskBoard.js";
 
 type Task = {
@@ -102,7 +106,8 @@ function isClaimedByCurrentUser(task: Task, auth: AuthPayload | null) {
 
 export default function TaskListClient({ justCreated }: { justCreated: boolean }) {
   const router = useRouter();
-  const { ready, authenticated, login } = usePrivy();
+  const { ready, authenticated, login, getAccessToken, user } = usePrivy();
+  const { wallets } = useWallets();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [auth, setAuth] = useState<AuthPayload | null>(null);
   const [loading, setLoading] = useState(true);
@@ -111,6 +116,11 @@ export default function TaskListClient({ justCreated }: { justCreated: boolean }
   const [claimingId, setClaimingId] = useState("");
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
+  const connectedWallet =
+    wallets.find((wallet) => wallet.walletClientType === "privy" && wallet.address)?.address ||
+    user?.wallet?.address ||
+    wallets.find((wallet) => wallet.address)?.address ||
+    undefined;
 
   async function loadTasks() {
     const response = await fetch("/api/tasks", { cache: "no-store", credentials: "same-origin" });
@@ -119,15 +129,15 @@ export default function TaskListClient({ justCreated }: { justCreated: boolean }
   }
 
   async function loadAuth() {
-    const response = await fetch("/api/auth/me", {
-      cache: "no-store",
-      credentials: "same-origin"
+    const payload = await loadAuthWithPrivySession<AuthPayload>({
+      authenticated,
+      getAccessToken,
+      walletAddress: connectedWallet
     });
-    if (!response.ok) {
+    if (!payload) {
       setAuth(null);
       return;
     }
-    const payload = (await response.json()) as AuthPayload;
     setAuth(payload);
   }
 
@@ -139,7 +149,7 @@ export default function TaskListClient({ justCreated }: { justCreated: boolean }
   useEffect(() => {
     if (!ready || !authenticated) return;
     loadAuth();
-  }, [ready, authenticated]);
+  }, [ready, authenticated, getAccessToken, connectedWallet]);
 
   const filtered = useMemo(() => {
     return tasks.filter((task) => {
@@ -174,16 +184,24 @@ export default function TaskListClient({ justCreated }: { justCreated: boolean }
 
     setClaimingId(task.id);
     try {
-      const response = await fetch(`/api/tasks/${task.id}/claim`, {
-        method: "POST",
-        credentials: "same-origin"
-      });
+      const response = await fetchWithPrivySessionRetry(
+        `/api/tasks/${task.id}/claim`,
+        {
+          method: "POST",
+          credentials: "same-origin"
+        },
+        {
+          authenticated,
+          getAccessToken,
+          walletAddress: connectedWallet
+        }
+      );
       const payload = (await response.json().catch(() => ({}))) as { error?: string };
       if (!response.ok) {
         throw new Error(payload.error || "Unable to claim task.");
       }
       setMessage(`Claimed "${task.title}" as ${auth.human.name}.`);
-      await loadTasks();
+      await Promise.all([loadTasks(), loadAuth()]);
     } catch (claimError) {
       setError(claimError instanceof Error ? claimError.message : "Unable to claim task.");
     } finally {
