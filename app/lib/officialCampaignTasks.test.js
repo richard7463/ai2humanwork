@@ -187,7 +187,7 @@ test("campaign verification uses the latest structured evidence when proof is re
   assert.equal(result.missing.includes("Submitted X URL matches executor handle"), false);
 });
 
-test("campaign verification fails when screenshot proof is just the X post URL", () => {
+test("campaign verification accepts the live X URL as proof for x tasks", () => {
   const task = {
     ...buildOfficialCampaignTask({
       templateId: "x_reply_thread",
@@ -230,8 +230,8 @@ test("campaign verification fails when screenshot proof is just the X post URL",
 
   const result = getTaskVerificationStatus(task);
 
-  assert.equal(result.ok, false);
-  assert.ok(result.missing.includes("Screenshot proof is uploaded"));
+  assert.equal(result.ok, true);
+  assert.equal(result.missing.includes("Proof URL or screenshot is uploaded"), false);
 });
 
 test("real-world verification passes when location, timestamp, photo, and summary are present", () => {

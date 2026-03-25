@@ -253,9 +253,9 @@ export default function TaskDetailClient({
   const proofPhraseLabel = task.campaign?.platform === "x"
     ? "Required Phrase"
     : "Verification Code / Phrase";
-  const photoLabel = task.campaign?.platform === "x" ? "Screenshot Image URL" : "Proof Photo URL";
+  const photoLabel = task.campaign?.platform === "x" ? "Proof URL or Screenshot URL" : "Proof Photo URL";
   const photoPlaceholder = task.campaign?.platform === "x"
-    ? "https://image-host.example/proof.png"
+    ? "Leave blank to reuse your live post/profile URL, or paste an image URL"
     : "https://... or /path/to/photo";
   const summaryPlaceholder = task.campaign?.platform === "x"
     ? "One-line summary of what you published and where."
@@ -346,6 +346,9 @@ export default function TaskDetailClient({
 
     setSubmitting(true);
     try {
+      const proofArtifactUrl = requiresPhoto
+        ? screenshotUrl.trim() || postUrl.trim() || profileUrl.trim() || undefined
+        : undefined;
       const response = await fetchWithPrivySessionRetry(
         `/api/tasks/${task.id}/evidence`,
         {
@@ -357,7 +360,7 @@ export default function TaskDetailClient({
             executorHandle: requiresExecutorHandle ? executorHandle : undefined,
             postUrl: requiresPostUrl ? postUrl : undefined,
             profileUrl: requiresProfileUrl ? profileUrl : profileUrl || undefined,
-            screenshotUrl: requiresPhoto ? screenshotUrl : undefined,
+            screenshotUrl: proofArtifactUrl,
             locationNote: requiresLocationNote ? locationNote : undefined,
             timestampNote: requiresTimestampNote ? timestampNote : undefined,
             proofPhrase: requiresProofPhrase ? proofPhrase : undefined,
@@ -710,6 +713,11 @@ export default function TaskDetailClient({
                       onChange={(event) => setScreenshotUrl(event.target.value)}
                       placeholder={photoPlaceholder}
                     />
+                    {task.campaign?.platform === "x" ? (
+                      <p className={styles.fieldHelp}>
+                        You can reuse the same live X post/profile URL here. A separate image is optional for demo flow.
+                      </p>
+                    ) : null}
                   </div>
                 ) : null}
 

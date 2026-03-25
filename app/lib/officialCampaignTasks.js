@@ -23,7 +23,7 @@ const X_CAMPAIGN_TEMPLATES = [
       "Attach your X handle.",
       "Attach the live quote-post URL.",
       "The live URL must belong to the same X handle you submit.",
-      "Upload a screenshot showing the post on your timeline.",
+      "Attach the live proof URL or a screenshot showing the post on your timeline.",
       "Repeat the required campaign phrase.",
       "Add a one-line execution summary."
     ],
@@ -31,7 +31,7 @@ const X_CAMPAIGN_TEMPLATES = [
       "Executor handle is present.",
       "Live quote-post URL is present.",
       "Submitted X URL matches executor handle.",
-      "Screenshot proof is uploaded.",
+      "Proof URL or screenshot is uploaded.",
       "Required phrase is present.",
       "Execution summary is present."
     ],
@@ -49,7 +49,7 @@ const X_CAMPAIGN_TEMPLATES = [
       "Attach your X handle.",
       "Attach the live reply URL.",
       "The live URL must belong to the same X handle you submit.",
-      "Upload a screenshot showing the reply under the thread.",
+      "Attach the live proof URL or a screenshot showing the reply under the thread.",
       "Include the required campaign phrase.",
       "Add a one-line execution summary."
     ],
@@ -57,7 +57,7 @@ const X_CAMPAIGN_TEMPLATES = [
       "Executor handle is present.",
       "Live reply URL is present.",
       "Submitted X URL matches executor handle.",
-      "Screenshot proof is uploaded.",
+      "Proof URL or screenshot is uploaded.",
       "Required phrase is present.",
       "Execution summary is present."
     ],
@@ -75,14 +75,14 @@ const X_CAMPAIGN_TEMPLATES = [
       "Attach your X handle.",
       "Attach your X profile URL.",
       "The profile URL must belong to the same X handle you submit.",
-      "Upload a screenshot showing the repost state on the official post or your profile.",
+      "Attach the live proof URL or a screenshot showing the repost state on the official post or your profile.",
       "Add a one-line execution summary."
     ],
     verificationChecks: [
       "Executor handle is present.",
       "Executor profile URL is present.",
       "Submitted X URL matches executor handle.",
-      "Screenshot proof is uploaded.",
+      "Proof URL or screenshot is uploaded.",
       "Execution summary is present."
     ],
     submissionFields: ["executorHandle", "profileUrl", "photo", "summary"]
@@ -99,7 +99,7 @@ const X_CAMPAIGN_TEMPLATES = [
       "Attach your X handle.",
       "Attach the live post URL.",
       "The live URL must belong to the same X handle you submit.",
-      "Upload a screenshot showing the published post.",
+      "Attach the live proof URL or a screenshot showing the published post.",
       "Include the required hashtag or phrase.",
       "Add a one-line execution summary."
     ],
@@ -107,7 +107,7 @@ const X_CAMPAIGN_TEMPLATES = [
       "Executor handle is present.",
       "Live post URL is present.",
       "Submitted X URL matches executor handle.",
-      "Screenshot proof is uploaded.",
+      "Proof URL or screenshot is uploaded.",
       "Required phrase is present.",
       "Execution summary is present."
     ],
@@ -278,7 +278,7 @@ function isXUrl(value) {
 
 function isScreenshotProof(value) {
   const raw = String(value || "").trim();
-  return Boolean(raw) && !isXUrl(raw);
+  return Boolean(raw);
 }
 
 function normalizeXUrl(value) {
@@ -514,7 +514,7 @@ export function getTaskVerificationStatus(task) {
 
     checks.push({
       id: "screenshot",
-      label: "Screenshot proof is uploaded",
+      label: "Proof URL or screenshot is uploaded",
       passed: screenshots.some((item) => isScreenshotProof(item))
     });
 
