@@ -4,11 +4,15 @@
 
 ![ai2human hero](public/brand/ai2human-social-hero.png)
 
-When an agent gets blocked by a storefront check, signature, pickup, or in-person confirmation, ai2human dispatches a human operator, collects structured proof, verifies completion, and settles on X Layer.
+The planner first queries Wallet API, Market API, and Trade API on X Layer. If a storefront check, signature, pickup, or in-person confirmation still blocks the task, ai2human dispatches a human operator, collects structured proof, verifies completion, and settles on X Layer.
 
 Core loop:
 
 `task -> human execution -> proof -> verify -> settle`
+
+Chain-native framing:
+
+`human fallback is the last-resort execution layer when onchain agents hit real-world constraints or compliance gates`
 
 Quick links:
 
@@ -28,6 +32,16 @@ ai2human brings that last mile back into one auditable system:
 - structured proof is submitted
 - verification clears the result
 - settlement is released only after approval
+
+## OnchainOS Main Path
+
+The main path is not "agent fails first, then humans appear." The planner runs an X Layer precheck first:
+
+- `Wallet API` checks signer control, payout readiness, and whether the task can stay inside an X Layer wallet
+- `Market API` checks whether a quoted onchain route can satisfy the request before escalation
+- `Trade API` checks whether settlement and asset movement can remain autonomous on X Layer
+
+If those checks still hit a real-world or compliance blocker, human fallback becomes the last-resort execution layer.
 
 ## Proven X Layer Settlement
 

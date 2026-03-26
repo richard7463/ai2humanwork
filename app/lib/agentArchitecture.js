@@ -1,9 +1,18 @@
+import { CHAIN_NATIVE_FALLBACK_FRAMING } from "./onchainOs.js";
+
 const AGENT_ROLE_CONFIG = [
   {
     id: "planner_agent",
     title: "Planner Agent",
     kind: "agent",
-    description: "Detects the blocker and decides whether the task can stay autonomous."
+    description: "Owns route selection after the OnchainOS precheck completes."
+  },
+  {
+    id: "onchainos_precheck",
+    title: "OnchainOS Precheck",
+    kind: "infra",
+    description:
+      "Queries Wallet API, Market API, and Trade API on X Layer before the planner decides whether to stay autonomous or escalate."
   },
   {
     id: "dispatcher_agent",
@@ -68,9 +77,15 @@ function getRoleState(task, roleId) {
   switch (roleId) {
     case "planner_agent":
       if (status === "ai_running") return "active";
-      if (status === "ai_failed") return "blocked";
-      if (["ai_done", "human_assigned", "human_done", "verified", "paid"].includes(status)) {
+      if (["ai_failed", "ai_done", "human_assigned", "human_done", "verified", "paid"].includes(status)) {
         return "done";
+      }
+      return "waiting";
+    case "onchainos_precheck":
+      if (status === "ai_running") return "active";
+      if (status === "ai_done") return "done";
+      if (["ai_failed", "human_assigned", "human_done", "verified", "paid"].includes(status)) {
+        return "blocked";
       }
       return "waiting";
     case "dispatcher_agent":
@@ -101,15 +116,28 @@ function getRoleState(task, roleId) {
 function getFallbackMessage(task, roleId) {
   switch (roleId) {
     case "planner_agent":
-      if (task?.status === "ai_failed") return "Flagged a real-world constraint and requested fallback.";
-      if (["ai_done", "human_assigned", "human_done", "verified", "paid"].includes(task?.status)) {
-        return "Finished the autonomous planning pass.";
+      if (["ai_failed", "human_assigned", "human_done", "verified", "paid"].includes(task?.status)) {
+        return "Completed route selection and handed the blocked task to dispatcher-led fallback.";
+      }
+      if (task?.status === "ai_done") {
+        return "Finished route selection and kept the task on the autonomous onchain path.";
       }
       return "Waiting to inspect the task.";
+    case "onchainos_precheck":
+      if (task?.status === "ai_running") {
+        return "Checking Wallet API, Market API, and Trade API routes on X Layer before escalation.";
+      }
+      if (task?.status === "ai_done") {
+        return "Cleared the task for autonomous execution after the X Layer precheck passed.";
+      }
+      if (["ai_failed", "human_assigned", "human_done", "verified", "paid"].includes(task?.status)) {
+        return CHAIN_NATIVE_FALLBACK_FRAMING;
+      }
+      return "Waiting for planner input.";
     case "dispatcher_agent":
       if (task?.status === "ai_failed") return "Searching for a payout-ready operator.";
       if (["human_assigned", "human_done", "verified", "paid"].includes(task?.status)) {
-        return "Dispatched the task to a human executor.";
+        return "Accepted the planner handoff and routed the task to a human executor.";
       }
       return "Idle until the planner escalates.";
     case "human_operator":

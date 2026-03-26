@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { updateDb } from "../../../../lib/store";
 import { canTransition, explainInvalidTransition } from "../../../../lib/taskStateMachine";
 import { appendEvidence, appendTransitionEvidence } from "../../../../lib/taskEvidence";
+import { getOnchainOsPrecheck } from "../../../../lib/onchainOs";
 
 export const runtime = "nodejs";
 
@@ -21,6 +22,8 @@ export async function POST(
     if (!task) {
       return;
     }
+
+    const precheck = getOnchainOsPrecheck(task, outcome);
 
     const nextStatus = outcome === "success" ? "ai_done" : "ai_failed";
     const previousStatus = task.status;
@@ -46,11 +49,12 @@ export async function POST(
     appendEvidence(task, {
       by: "ai",
       type: "note",
-      content: `agent_event: planner_agent | ${
-        outcome === "success"
-          ? "Planner kept the task autonomous."
-          : "Planner detected a real-world blocker and escalated to fallback."
-      }`
+      content: `agent_event: onchainos_precheck | ${precheck.precheckMessage}`
+    });
+    appendEvidence(task, {
+      by: "ai",
+      type: "note",
+      content: `agent_event: planner_agent | ${precheck.plannerMessage}`
     });
     updated = task;
   });

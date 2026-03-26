@@ -2,7 +2,7 @@ export const SUBMISSION_PROJECT = {
   name: "ai2human",
   tagline: "Human fallback infrastructure for agents on X Layer",
   oneLiner:
-    "When agents hit reality, ai2human dispatches a human operator, collects structured proof, verifies completion, and settles on X Layer.",
+    "ai2human inserts an OnchainOS precheck before fallback: the planner queries Wallet API, Market API, and Trade API on X Layer, keeps work autonomous when possible, and dispatches a human operator only when reality or compliance still blocks the task.",
   githubUrl: "https://github.com/richard7463/ai2humanwork",
   demoPath: "/livedemo",
   reviewerPath: "/reviewer",
@@ -12,11 +12,32 @@ export const SUBMISSION_PROJECT = {
 
 export const SUBMISSION_CORE_LOOP = [
   "Task posted with proof requirements",
-  "Agent is blocked by a real-world step",
-  "Human operator claims and executes the task",
+  "Planner queries Wallet API, Market API, and Trade API on X Layer",
+  "If the task is still blocked, the planner escalates to dispatcher-led human fallback",
+  "Human operator claims and executes the last-resort real-world step",
   "Structured proof is submitted and verified",
   "Settlement is released on X Layer"
 ];
+
+export const SUBMISSION_ONCHAIN_OS_PRECHECK = [
+  {
+    label: "Wallet API",
+    description:
+      "Checks signer control, payout readiness, and whether the agent can keep execution inside an X Layer wallet."
+  },
+  {
+    label: "Market API",
+    description:
+      "Checks whether a quoted onchain route can satisfy the request before escalating out of software."
+  },
+  {
+    label: "Trade API",
+    description: "Checks whether settlement and asset movement can stay autonomous on X Layer."
+  }
+];
+
+export const SUBMISSION_CHAIN_NATIVE_FRAMING =
+  "Human fallback is the last-resort execution layer when onchain agents hit real-world constraints or compliance gates.";
 
 export const SUBMISSION_REAL_SETTLEMENT = {
   taskId: "7bde6365-9e4a-4fa9-a2f4-e79657b354b3",

@@ -295,8 +295,13 @@ export function makeSeedTasks(count: number): Task[] {
         "ai",
         "log",
         scenario.kind === "x"
-          ? "AI running: evaluating whether this official X campaign task can be completed without a human executor"
-          : "AI running: checking whether this task can stay autonomous or needs a local human operator"
+          ? "AI running: querying Wallet API, Market API, and Trade API to decide whether this X task can stay autonomous"
+          : "AI running: querying Wallet API, Market API, and Trade API to decide whether this task can stay autonomous"
+      );
+      addEvidence(
+        "ai",
+        "note",
+        "agent_event: onchainos_precheck | Checking Wallet API, Market API, and Trade API on X Layer before escalation."
       );
     }
     if (status === "ai_failed") {
@@ -304,8 +309,20 @@ export function makeSeedTasks(count: number): Task[] {
         "ai",
         "log",
         scenario.kind === "x"
-          ? "AI failed: social distribution action requires a human-owned X account before settlement can clear"
-          : "AI failed: real-world execution requires an on-site human to collect proof before settlement can clear"
+          ? "AI failed: Wallet, Market, and Trade prechecks cleared settlement, but a human-owned X identity and live post are still required"
+          : "AI failed: Wallet, Market, and Trade prechecks cleared settlement, but an on-site human is still required for proof collection"
+      );
+      addEvidence(
+        "ai",
+        "note",
+        scenario.kind === "x"
+          ? "agent_event: onchainos_precheck | Queried Wallet API, Market API, and Trade API on X Layer, but a human-owned X identity and live post are still required."
+          : "agent_event: onchainos_precheck | Queried Wallet API, Market API, and Trade API on X Layer, but the task still requires an on-site check, signature, pickup, or physical proof collection."
+      );
+      addEvidence(
+        "ai",
+        "note",
+        "agent_event: planner_agent | Escalated to the dispatcher after Wallet API, Market API, and Trade API checks still hit a real-world or compliance blocker."
       );
     }
     if (status === "ai_done") {
@@ -313,8 +330,18 @@ export function makeSeedTasks(count: number): Task[] {
         "ai",
         "note",
         scenario.kind === "x"
-          ? `AI note: campaign brief prepared for ${campaignTask.campaign?.requesterHandle || "@official"}`
-          : `AI note: visit brief prepared for ${campaignTask.campaign?.requesterName || "ops desk"}`
+          ? `AI note: campaign brief prepared for ${campaignTask.campaign?.requesterHandle || "@official"} after autonomous X Layer prechecks cleared.`
+          : `AI note: visit brief prepared for ${campaignTask.campaign?.requesterName || "ops desk"} after autonomous X Layer prechecks cleared.`
+      );
+      addEvidence(
+        "ai",
+        "note",
+        "agent_event: onchainos_precheck | Queried Wallet API, Market API, and Trade API on X Layer and cleared the task for autonomous execution."
+      );
+      addEvidence(
+        "ai",
+        "note",
+        "agent_event: planner_agent | Kept the task on the autonomous onchain path after Wallet API, Market API, and Trade API checks cleared."
       );
     }
     if (status === "human_assigned") {
@@ -322,6 +349,13 @@ export function makeSeedTasks(count: number): Task[] {
         "system",
         "log",
         `Human assigned: ${scenario.kind === "x" ? executorHandle : `field-operator-${(i % 6) + 1}`}`
+      );
+      addEvidence(
+        "system",
+        "note",
+        `agent_event: dispatcher_agent | Routed the task to ${
+          scenario.kind === "x" ? executorHandle : `field-operator-${(i % 6) + 1}`
+        } with a payout-ready wallet.`
       );
     }
     if (status === "human_done" || status === "verified" || status === "paid") {

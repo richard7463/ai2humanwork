@@ -2,6 +2,18 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { getTaskAgentArchitecture } from "./agentArchitecture.js";
 
+test("marks OnchainOS precheck as blocked once the fallback path takes over", () => {
+  const roles = getTaskAgentArchitecture({
+    status: "paid",
+    createdAt: "2026-03-22T00:00:00.000Z",
+    updatedAt: "2026-03-22T00:10:00.000Z",
+    evidence: []
+  });
+
+  const precheckRole = roles.find((role) => role.id === "onchainos_precheck");
+  assert.equal(precheckRole.state, "blocked");
+});
+
 test("marks x402 gate as ready once human proof exists", () => {
   const roles = getTaskAgentArchitecture({
     status: "human_done",

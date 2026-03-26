@@ -14,21 +14,26 @@ const copy = {
     titleA: "Agents hit reality.",
     titleB: "ai2human closes the loop.",
     lead:
-      "When an agent needs a storefront check, signature, pickup, or in-person confirmation, ai2human dispatches a human operator, collects structured proof, verifies completion, and settles on X Layer.",
+      "The planner runs Wallet API, Market API, and Trade API prechecks on X Layer first. If a storefront check, signature, pickup, or in-person confirmation still blocks the task, ai2human dispatches a human operator, collects structured proof, verifies completion, and settles on X Layer.",
     ctaPrimary: "Open Live Demo",
     ctaSecondary: "Open Task Board",
     ctaTertiary: "Open Submission Proof"
   },
-  meta: ["human fallback infra", "proof-first execution", "x layer settlement"],
+  meta: ["human fallback infra", "onchainos precheck", "x layer settlement"],
   section: {
-    stackTitle: "Core Stack",
+    stackTitle: "OnchainOS + Fallback Stack",
     stackDesc:
-      "Dispatch, proof, verification, and settlement stay inside one auditable loop.",
+      "Wallet, market, and trade prechecks happen before fallback. Dispatch, proof, verification, and settlement stay inside one auditable loop.",
     stackItems: [
+      {
+        name: "precheck",
+        label: "OnchainOS Precheck",
+        desc: "The planner queries Wallet API, Market API, and Trade API on X Layer before deciding whether to stay autonomous."
+      },
       {
         name: "dispatch",
         label: "Human Dispatch",
-        desc: "Route a blocked agent task to a local operator who can complete the real-world step."
+        desc: "Only after the precheck fails does the dispatcher route the blocked task to a local operator."
       },
       {
         name: "proof",
@@ -43,10 +48,10 @@ const copy = {
     ],
     liveTitle: "Submission Walkthrough",
     liveDesc:
-      "One blocked agent task flows through dispatch, proof, verification, and X Layer settlement.",
-    loopTitle: "The Loop: Task → Human fallback → Proof → Verify → Settle",
+      "One blocked agent task flows through OnchainOS precheck, human fallback, proof, verification, and X Layer settlement.",
+    loopTitle: "The Loop: Precheck → Human fallback → Proof → Verify → Settle",
     loopDesc:
-      "The agent handles what it can. When reality is involved, ai2human dispatches a human, returns proof, verifies the result, and only then settles.",
+      "The agent handles what it can. Human fallback is the last-resort execution layer when onchain agents hit real-world constraints or compliance gates.",
     loopBoards: {
       intake: "Blocked Task",
       console: "Proof Review",
@@ -54,7 +59,7 @@ const copy = {
     },
     caseTitle: "Best-Fit Scenarios",
     caseDesc:
-      "Real-world steps that agents cannot finish alone: signatures, pickups, local checks, and photo-based verification.",
+      "Real-world steps and compliance gates that agents cannot finish alone: signatures, pickups, local checks, and photo-based verification.",
     entryTitle: "Three Roles, One Closed Loop",
     entryDesc: "Buyer, operator, and reviewer stay inside the same auditable flow.",
     entries: [
@@ -208,8 +213,9 @@ export default function HomePage() {
   const consoleLines = useMemo(() => {
     return [
       "[task] storefront verification posted on X Layer flow",
-      "[agent] policy check completed, physical visit required",
-      "[dispatch] routing to operator in Shanghai",
+      "[precheck] wallet, market, and trade routes queried on X Layer",
+      "[planner] physical visit still required, escalating to dispatcher",
+      "[dispatch] routing to operator in Shanghai as last-resort fallback",
       "[proof] evidence uploaded: photos + signed receipt",
       "[verify] reviewer approved the bundle",
       "[settle] payment released after verification",
@@ -232,7 +238,7 @@ export default function HomePage() {
     return [
       {
         title: "Storefront Verification",
-        desc: "The agent reaches a real store visit and dispatches a local operator for proof.",
+        desc: "The planner cannot clear the route onchain, so ai2human dispatches a local operator for proof.",
         tags: ["store", "proof", "verify"]
       },
       {
@@ -241,9 +247,9 @@ export default function HomePage() {
         tags: ["receipt", "human", "timestamp"]
       },
       {
-        title: "Proof + Settlement",
-        desc: "Proof artifacts become an auditable bundle, then settlement is linked to an X Layer transaction.",
-        tags: ["proof", "review", "settle"]
+        title: "OnchainOS + Settlement",
+        desc: "Wallet, market, and trade prechecks decide the route before proof artifacts are settled on X Layer.",
+        tags: ["precheck", "x-layer", "settle"]
       }
     ];
   }, []);

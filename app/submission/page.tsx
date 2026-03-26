@@ -1,6 +1,8 @@
 import Link from "next/link";
 import {
+  SUBMISSION_CHAIN_NATIVE_FRAMING,
   SUBMISSION_CORE_LOOP,
+  SUBMISSION_ONCHAIN_OS_PRECHECK,
   SUBMISSION_PROJECT,
   SUBMISSION_REAL_SETTLEMENT,
   SUBMISSION_X402_STATUS
@@ -24,9 +26,29 @@ const scenarios = [
 const checks = [
   "Public GitHub repository",
   "Live demo showing the closed loop",
+  "Planner path starts with an OnchainOS precheck",
   "Reviewer console with proof and settlement history",
   "A real X Layer settlement transaction hash",
   "Structured proof tied to one completed task"
+];
+
+const collaborationRoles = [
+  {
+    label: "Planner agent",
+    description: "Owns route selection after the OnchainOS precheck completes."
+  },
+  {
+    label: "Dispatcher agent",
+    description: "Only takes over when the planner explicitly escalates to last-resort human fallback."
+  },
+  {
+    label: "Verifier agent",
+    description: "Checks proof integrity and settlement conditions before money moves."
+  },
+  {
+    label: "Settlement agent",
+    description: "Releases payment on X Layer only after verification clears."
+  }
 ];
 
 const sectionStyle = {
@@ -170,6 +192,60 @@ export default function SubmissionPage() {
           </div>
         </section>
 
+        <section style={cardGridStyle}>
+          <div className="market-card">
+            <div className="block-header">
+              <div>
+                <h2>OnchainOS Main Path</h2>
+                <p className="mvp-muted">
+                  X Layer is part of route selection, not only the payout layer.
+                </p>
+              </div>
+            </div>
+            <div className="mvp-evidence" style={{ borderTop: "none", paddingTop: 0 }}>
+              <div className="mvp-evidence-item">
+                <div className="evidence-meta">
+                  <span>framing</span>
+                  <span>main path</span>
+                </div>
+                <p>{SUBMISSION_CHAIN_NATIVE_FRAMING}</p>
+              </div>
+              {SUBMISSION_ONCHAIN_OS_PRECHECK.map((item) => (
+                <div key={item.label} className="mvp-evidence-item">
+                  <div className="evidence-meta">
+                    <span>precheck</span>
+                    <span>{item.label}</span>
+                  </div>
+                  <p>{item.description}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="market-card">
+            <div className="block-header">
+              <div>
+                <h2>Agent Collaboration</h2>
+                <p className="mvp-muted">
+                  Planner, dispatcher, verifier, and settlement are presented as one decision chain.
+                </p>
+              </div>
+            </div>
+            <div className="mvp-evidence" style={{ borderTop: "none", paddingTop: 0 }}>
+              {collaborationRoles.map((item) => (
+                <div key={item.label} className="mvp-evidence-item">
+                  <div className="evidence-meta">
+                    <span>role</span>
+                    <span>active</span>
+                  </div>
+                  <p>{item.label}</p>
+                  <p className="mvp-muted">{item.description}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
         <section className="market-card">
           <div className="block-header">
             <div>
@@ -257,6 +333,12 @@ export default function SubmissionPage() {
               </div>
             </div>
             <div className="mvp-evidence" style={{ borderTop: "none", paddingTop: 0 }}>
+              <div className="mvp-evidence-item">
+                <div className="evidence-meta">
+                  <span>chain-native framing</span>
+                </div>
+                <p>{SUBMISSION_CHAIN_NATIVE_FRAMING}</p>
+              </div>
               {scenarios.map((scenario) => (
                 <div key={scenario} className="mvp-evidence-item">
                   <div className="evidence-meta">

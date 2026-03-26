@@ -6,6 +6,10 @@ import {
   getTaskVerificationStatus
 } from "../lib/officialCampaignTasks.js";
 import { getTaskAgentArchitecture } from "../lib/agentArchitecture.js";
+import {
+  CHAIN_NATIVE_FALLBACK_FRAMING,
+  getOnchainOsPrecheck
+} from "../lib/onchainOs.js";
 import X402VerificationUnlockCard from "../components/X402VerificationUnlockCard";
 import { formatBudgetLabel } from "../lib/assetLabels.js";
 
@@ -67,23 +71,24 @@ const statusLabels: Record<Task["status"], string> = {
   paid: "Paid"
 };
 
-const flowSteps = ["Task", "AI", "Human", "Verify", "Settle"];
+const flowSteps = ["Task", "Precheck", "Planner", "Human", "Verify", "Settle"];
 
 const getStageIndex = (status: Task["status"]) => {
   switch (status) {
     case "created":
       return 0;
     case "ai_running":
+      return 1;
     case "ai_done":
     case "ai_failed":
-      return 1;
+      return 2;
     case "human_assigned":
     case "human_done":
-      return 2;
-    case "verified":
       return 3;
-    case "paid":
+    case "verified":
       return 4;
+    case "paid":
+      return 5;
     default:
       return 0;
   }
@@ -317,15 +322,15 @@ export default function LiveDemoPage() {
     setDemoRunningId(task.id);
     setDemoError("");
     try {
-      setLastEvent("AI started");
+      setLastEvent("Planner started Wallet / Market / Trade precheck");
       await runAi(task.id, "fail");
-      setLastEvent("AI failed, dispatching human");
+      setLastEvent("Precheck blocked the autonomous path, handing off to dispatcher");
       await assignHuman(task.id);
-      setLastEvent("Human assigned, collecting evidence");
+      setLastEvent("Dispatcher assigned a fallback operator");
       await submitEvidence(task);
-      setLastEvent("Evidence submitted, verifying");
+      setLastEvent("Structured proof submitted, verifying");
       await verifyTask(task.id);
-      setLastEvent("Verified, releasing settlement");
+      setLastEvent("Verifier cleared proof, releasing settlement");
       const payload = await settleTask(task.id);
       setLastEvent(
         payload?.payment?.method === "xlayer_erc20" ? "Settled on X Layer" : "Settled in demo mode"
@@ -426,12 +431,18 @@ export default function LiveDemoPage() {
     () => (selectedTask ? getTaskAgentArchitecture(selectedTask) : []),
     [selectedTask]
   );
+  const selectedPrecheck = useMemo(() => {
+    if (!selectedTask) return null;
+    const outcome = selectedTask.status === "ai_done" ? "success" : "fail";
+    return getOnchainOsPrecheck(selectedTask, outcome);
+  }, [selectedTask]);
   const stageIndex = selectedTask ? getStageIndex(selectedTask.status) : 0;
-  const stageProgress = Math.min(100, Math.round((stageIndex / 4) * 100));
+  const stageProgress = Math.min(100, Math.round((stageIndex / 5) * 100));
   const stageLabels = [
     "Task posted",
-    "Agent blocked",
-    "Human dispatched",
+    "OnchainOS precheck",
+    "Planner handoff",
+    "Human fallback",
     "Proof verified",
     "Settled"
   ];
@@ -448,10 +459,12 @@ export default function LiveDemoPage() {
               <span className="auto-tag">judge walkthrough</span>
             </div>
             <p className="eyebrow">X Layer Submission Demo</p>
-            <h1>Agent blocked → human fallback → proof → verify → settle on X Layer</h1>
+            <h1>Planner precheck → human fallback → proof → verify → settle on X Layer</h1>
             <p className="mvp-lead">
-              Single-scenario playback for judges. The agent hits a real-world blocker, a local operator
-              uploads proof, verification clears, then settlement is released on X Layer when configured.
+              Single-scenario playback for judges. The planner queries Wallet API, Market API, and
+              Trade API on X Layer first. If the task is still blocked by real-world constraints or
+              compliance gates, ai2human dispatches a local operator, verifies proof, and releases
+              settlement on X Layer.
             </p>
           <div className="mvp-steps">
             {flowSteps.map((step, index) => (
@@ -465,15 +478,15 @@ export default function LiveDemoPage() {
         <div className="market-kpis">
           <div>
             <span>Loop stages</span>
-            <strong>5</strong>
+            <strong>6</strong>
           </div>
           <div>
             <span>Paid tasks</span>
             <strong>{stats.paid}</strong>
           </div>
           <div>
-            <span>Settlement gate</span>
-            <strong>Verify first</strong>
+            <span>Fallback rule</span>
+            <strong>Last resort</strong>
           </div>
         </div>
       </header>
@@ -484,7 +497,7 @@ export default function LiveDemoPage() {
             <div>
               <h2>Auto loop status</h2>
               <p className="mvp-muted">
-                Continuous state-machine replay. No manual clicks required.
+                Continuous judge walkthrough. Planner precheck happens before human fallback.
               </p>
             </div>
             <span className={`status-pill ${demoRunningId ? "status-ai_running" : "status-ai_done"}`}>
@@ -504,12 +517,12 @@ export default function LiveDemoPage() {
               <strong>~12s</strong>
             </div>
               <div>
-                <span>Admin auth</span>
-                <strong>{adminToken ? "Configured" : "Missing"}</strong>
+                <span>Planner gate</span>
+                <strong>Wallet + Market + Trade</strong>
               </div>
               <div>
-                <span>X Layer wallet</span>
-                <strong>{DEMO_OPERATOR_WALLET ? "Bound" : "Demo fallback"}</strong>
+                <span>Fallback policy</span>
+                <strong>{DEMO_OPERATOR_WALLET ? "Payout-ready" : "Demo fallback"}</strong>
               </div>
             </div>
           <p className="mvp-muted">Last event: {lastEvent}</p>
@@ -557,7 +570,7 @@ export default function LiveDemoPage() {
             <div>
               <h2>Fallback execution queue</h2>
               <p className="mvp-muted">
-                Blocked agent tasks move through proof collection, verification, and X Layer settlement.
+                Planner-led OnchainOS prechecks decide whether the task stays autonomous or moves into fallback.
               </p>
             </div>
           </div>
@@ -617,7 +630,9 @@ export default function LiveDemoPage() {
           <div className="block-header">
             <div>
               <h2>Task detail</h2>
-              <p className="mvp-muted">One blocked step, one proof package, one settlement result.</p>
+              <p className="mvp-muted">
+                Planner queries X Layer first. Human fallback only appears when the onchain path stays blocked.
+              </p>
             </div>
           </div>
           {!selectedTask && <div className="market-empty">Waiting for tasks...</div>}
@@ -649,17 +664,47 @@ export default function LiveDemoPage() {
               </div>
 
               <div className="mvp-evidence">
+                <h4>OnchainOS precheck</h4>
+                {selectedPrecheck && (
+                  <>
+                    <div className="mvp-evidence-item">
+                      <div className="evidence-meta">
+                        <span>main path</span>
+                        <span>
+                          {selectedPrecheck.route === "autonomous_onchain"
+                            ? "autonomous"
+                            : "human fallback"}
+                        </span>
+                      </div>
+                      <p>{selectedPrecheck.precheckMessage}</p>
+                      <p className="mvp-muted">{selectedPrecheck.handoffMessage}</p>
+                    </div>
+                    {selectedPrecheck.apis.map((api) => (
+                      <div key={api.id} className="mvp-evidence-item">
+                        <div className="evidence-meta">
+                          <span>api</span>
+                          <span>{api.label}</span>
+                        </div>
+                        <p>{api.summary}</p>
+                      </div>
+                    ))}
+                  </>
+                )}
+              </div>
+
+              <div className="mvp-evidence">
                 <h4>Multi-agent architecture</h4>
                 <div className="reviewer-metric-grid">
                   {selectedAgentArchitecture.map((role) => (
                     <div key={role.id}>
-                      <span>{role.kind === "human" ? "human" : "agent"}</span>
+                      <span>{role.kind}</span>
                       <strong>{role.title}</strong>
                       <span
                         className={`status-pill ${agentStateStyles[role.state] || "status-created"}`}
                       >
                         {role.state}
                       </span>
+                      <p className="mvp-muted">{role.description}</p>
                       <p className="mvp-muted">{role.message}</p>
                     </div>
                   ))}
@@ -699,6 +744,7 @@ export default function LiveDemoPage() {
                   <h4>Campaign brief</h4>
                   <div className="mvp-evidence-item">
                     <p>{selectedTask.campaign.brief}</p>
+                    <p className="mvp-muted">{CHAIN_NATIVE_FALLBACK_FRAMING}</p>
                     {selectedTask.campaign.proofPhrase && (
                       <p className="mvp-muted">
                         Required phrase: <strong>{selectedTask.campaign.proofPhrase}</strong>
